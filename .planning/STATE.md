@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 ## Current Position
 
 Phase: 1 of 2 (Foundation, Auth, and Dispatch)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-02-27 — Completed Plan 02 (Hebrew login page, PHP session auth)
+Plan: 3 of 3 in current phase
+Status: Awaiting checkpoint (Task 3 human-verify — deploy and test end-to-end SMS flow)
+Last activity: 2026-02-27 — Auto tasks of Plan 03 complete (dispatch page + SMS endpoint). Awaiting deploy + human verify.
 
-Progress: [██░░░░░░░░] 33%
+Progress: [███░░░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
+- Total plans completed: 2 (Plan 03 auto tasks done — awaiting checkpoint)
 - Average duration: 1.5min
-- Total execution time: 3min
+- Total execution time: 5min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation-auth-dispatch | 2/3 | 3min | 1.5min |
+| 01-foundation-auth-dispatch | 2/3 complete + 1 at checkpoint | 5min | 1.67min |
 
 **Recent Trend:**
-- Last 5 plans: 1min, 2min
+- Last 5 plans: 1min, 2min, 2min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -51,6 +51,9 @@ Recent decisions affecting current work:
 - [Phase 01-02]: Use php://input (not $_POST) to read JSON body — $_POST only works for form-encoded payloads
 - [Phase 01-02]: session_regenerate_id(true) called BEFORE setting session data to prevent session fixation attacks
 - [Phase 01-02]: index.html auto-redirects already-logged-in users via check-session.php on DOMContentLoaded
+- [Phase 01-03]: iconv UTF-8 -> ISO-8859-8 required for Hebrew SMS via Micropay — raw UTF-8 produces garbled chars on phone
+- [Phase 01-03]: cURL used (not file_get_contents) for Micropay API — provides timeout control and curl_error() detection
+- [Phase 01-03]: Raw Micropay result included in ok:true JSON response — aids debugging since response format is undocumented
 
 ### Pending Todos
 
@@ -64,5 +67,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 01-02-PLAN.md (Hebrew login page, PHP session auth). Plan 03 ready to execute.
+Stopped at: 01-03 auto tasks complete (api/send-sms.php + dashboard.html). Task 3 checkpoint:human-verify — deploy to ch-ah.info/FirstApp/ and test 6 checks.
 Resume file: None
