@@ -1,0 +1,9 @@
+# Deny all direct access to signature files
+# Supports Apache 2.2 (legacy) and 2.4+ (current cPanel standard)
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+</IfModule>
