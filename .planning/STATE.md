@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 ## Current Position
 
 Phase: 1 of 2 (Foundation, Auth, and Dispatch)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-27 — Completed Plan 01 (foundation config, security, CSS)
+Last activity: 2026-02-27 — Completed Plan 02 (Hebrew login page, PHP session auth)
 
-Progress: [█░░░░░░░░░] 17%
+Progress: [██░░░░░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 1min
-- Total execution time: 1min
+- Total plans completed: 2
+- Average duration: 1.5min
+- Total execution time: 3min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-foundation-auth-dispatch | 1/3 | 1min | 1min |
+| 01-foundation-auth-dispatch | 2/3 | 3min | 1.5min |
 
 **Recent Trend:**
-- Last 5 plans: 1min
-- Trend: —
+- Last 5 plans: 1min, 2min
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -48,6 +48,9 @@ Recent decisions affecting current work:
 - [01-01]: No closing ?> in api/config.php — prevents trailing newline causing "headers already sent" on session_start()
 - [01-01]: Dual Apache syntax in signatures/.htaccess — covers Apache 2.2 legacy and 2.4+ for max cPanel compatibility
 - [01-01]: CSS input font-size 16px minimum — prevents iOS Safari auto-zoom on form field focus
+- [Phase 01-02]: Use php://input (not $_POST) to read JSON body — $_POST only works for form-encoded payloads
+- [Phase 01-02]: session_regenerate_id(true) called BEFORE setting session data to prevent session fixation attacks
+- [Phase 01-02]: index.html auto-redirects already-logged-in users via check-session.php on DOMContentLoaded
 
 ### Pending Todos
 
@@ -61,5 +64,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 01-01-PLAN.md (foundation config, security, CSS). Plan 02 ready to execute.
+Stopped at: Completed 01-02-PLAN.md (Hebrew login page, PHP session auth). Plan 03 ready to execute.
 Resume file: None
