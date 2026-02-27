@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>דף שיגור חתימה</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Inline additions for dashboard-specific elements not in base style.css */
+        #status-msg {
+            margin-top: 16px;
+        }
+        #status-msg.success {
+            display: block;
+            color: #388e3c;
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            background: #e8f5e9;
+            border-radius: 4px;
+            text-align: right;
+        }
+        #status-msg.error {
+            display: block;
+            color: #d32f2f;
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            background: #fdecea;
+            border-radius: 4px;
+            text-align: right;
+        }
+        #dispatch-btn {
+            margin-top: 24px;
+        }
+        .logout-row {
+            margin-top: 24px;
+            text-align: center;
+        }
+        #logout-link {
+            color: #888;
+            font-size: 0.9rem;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        #logout-link:hover {
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>דף שיגור חתימה</h1>
+        <p>לחץ על הכפתור לשליחת SMS עם קישור חתימה</p>
+
+        <button id="dispatch-btn" class="btn btn-primary">שלח בקשת חתימה</button>
+
+        <!-- Success/error feedback (DISP-04) — hidden until a dispatch attempt is made -->
+        <div id="status-msg" style="display:none;"></div>
+
+        <div class="logout-row">
+            <a href="#" id="logout-link">יציאה</a>
+        </div>
+    </div>
+
+    <script>
+        // ----------------------------------------------------------------
+        // Session guard — runs on page load before anything is interactive.
+        // If check-session.php returns ok:false the user is not logged in —
+        // redirect immediately to the login page. (AUTH-04)
+        // ----------------------------------------------------------------
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('api/check-session.php')
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data.ok !== true) {
+                        window.location.href = 'index.html';
+                    }
+                })
+                .catch(function () {
+                    // Network error reaching check-session — treat as unauthenticated
+                    window.location.href = 'index.html';
+                });
+        });
+
+        // ----------------------------------------------------------------
+        // Dispatch button — POST to send-sms.php and display result inline.
+        // Button is disabled during the request to prevent double-send.
+        // ----------------------------------------------------------------
+        var dispatchBtn = document.getElementById('dispatch-btn');
+        var statusMsg   = document.getElementById('status-msg');
+
+        dispatchBtn.addEventListener('click', function () {
+            // Disable button and show loading state
+            dispatchBtn.disabled = true;
+            dispatchBtn.textContent = 'שולח...';
+
+            // Hide any previous status message
+            statusMsg.style.display = 'none';
+            statusMsg.className = '';
+            statusMsg.textContent = '';
+
+            fetch('api/send-sms.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data.ok === true) {
+                        // Success (DISP-04)
+                        statusMsg.textContent = 'SMS נשלח בהצלחה!';
+                        statusMsg.className = 'success';
+                    } else {
+                        // Server-side error (DISP-04)
+                        statusMsg.textContent = data.message || 'שגיאה לא ידועה';
+                        statusMsg.className = 'error';
+                    }
+                })
+                .catch(function () {
+                    // Network-level error — could not reach server
+                    statusMsg.textContent = 'שגיאת תקשורת — נסה שוב';
+                    statusMsg.className = 'error';
+                })
+                .finally(function () {
+                    // Re-enable button regardless of outcome
+                    dispatchBtn.disabled = false;
+                    dispatchBtn.textContent = 'שלח בקשת חתימה';
+                });
+        });
+
+        // ----------------------------------------------------------------
+        // Logout link — redirects to login page.
+        // (Full server-side session destruction is a v2 concern.)
+        // ----------------------------------------------------------------
+        document.getElementById('logout-link').addEventListener('click', function (e) {
+            e.preventDefault();
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>
