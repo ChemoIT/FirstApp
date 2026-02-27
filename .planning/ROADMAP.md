@@ -10,7 +10,7 @@ FirstApp is built in two phases that mirror the two sides of the signing loop. P
 - Integer phases (1, 2): Planned milestone work
 - Decimal phases (1.1, 1.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Foundation, Auth, and Dispatch** - Security skeleton, login, protected dispatch page, and SMS sent to phone
+- [x] **Phase 1: Foundation, Auth, and Dispatch** - Security skeleton, login, protected dispatch page, and SMS sent to phone
 - [ ] **Phase 2: Signature Capture and Confirmation** - Mobile canvas signing, PNG saved to server, confirmation SMS received
 
 ## Phase Details
@@ -28,9 +28,9 @@ FirstApp is built in two phases that mirror the two sides of the signing loop. P
 **Plans**: 3 plans in 3 waves (sequential — each plan depends on the prior)
 
 Plans:
-- [ ] 01-01-PLAN.md — Folder structure, api/config.php, .htaccess security skeleton, RTL CSS (Wave 1)
-- [ ] 01-02-PLAN.md — Login page (index.html) and PHP session auth (api/login.php, api/check-session.php) (Wave 2)
-- [ ] 01-03-PLAN.md — Protected dispatch page (dashboard.html) and SMS send endpoint (api/send-sms.php) + human verify (Wave 3)
+- [x] 01-01-PLAN.md — Folder structure, api/config.php, .htaccess security skeleton, RTL CSS (Wave 1)
+- [x] 01-02-PLAN.md — Login page (index.html) and PHP session auth (api/login.php, api/check-session.php) (Wave 2)
+- [x] 01-03-PLAN.md — Protected dispatch page (dashboard.html) and SMS send endpoint (api/send-sms.php) + human verify (Wave 3)
 
 ### Phase 2: Signature Capture and Confirmation
 **Goal**: The recipient opens the SMS link on their phone, draws a signature with their finger, submits it, and both the recipient and Sharon receive confirmation — the full loop is proven end-to-end
@@ -56,5 +56,5 @@ Phases execute in numeric order: 1 → 2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation, Auth, and Dispatch | 0/3 | Not started | - |
+| 1. Foundation, Auth, and Dispatch | 3/3 | ✓ Complete | 2026-02-28 |
 | 2. Signature Capture and Confirmation | 0/3 | Not started | - |
