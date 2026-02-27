@@ -42,12 +42,11 @@ Plans:
   3. Tapping the "שלח" button saves a non-blank PNG file to the signatures/ folder on the server
   4. The signatures/ folder is not directly browsable or downloadable via a URL
   5. After the PNG is saved, a confirmation SMS "המסמך נחתם" is sent to 0526804680 and arrives on Sharon's phone
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 02-01: Signing page (sign.html) with canvas, signature_pad, and touch event listeners
-- [ ] 02-02: Save endpoint (api/save-signature.php) — base64 decode, PNG write, confirmation SMS
-- [ ] 02-03: End-to-end test: login → dispatch SMS → open link on phone → sign → confirm SMS received
+- [ ] 02-01-PLAN.md — Signing page (sign.html) + save endpoint (api/save-signature.php) with GD validation and confirmation SMS (Wave 1)
+- [ ] 02-02-PLAN.md — End-to-end human verification: full dispatch-sign-confirm loop on real phone (Wave 2)
 
 ## Progress
 
@@ -57,4 +56,4 @@ Phases execute in numeric order: 1 → 2
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation, Auth, and Dispatch | 3/3 | ✓ Complete | 2026-02-28 |
-| 2. Signature Capture and Confirmation | 0/3 | Not started | - |
+| 2. Signature Capture and Confirmation | 0/2 | Not started | - |
