@@ -5,32 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-27)
 
 **Core value:** A user can dispatch a signature request via SMS and receive a signed document back — the full send-sign-confirm loop must work end to end.
-**Current focus:** Phase 1 complete — ready for Phase 2
+**Current focus:** Phase 2 in progress — sign.html and api/save-signature.php built, ready for deploy + human verify
 
 ## Current Position
 
-Phase: 1 of 2 — COMPLETE (Foundation, Auth, and Dispatch)
-Plan: 3/3 complete
-Status: Phase 1 verified and complete. Ready to plan Phase 2.
-Last activity: 2026-02-28 — Phase 1 executed, deployed via GitHub Actions FTP, human-verified, verification passed 11/11.
+Phase: 2 of 2 — IN PROGRESS (Signature Capture and Confirmation)
+Plan: 1/2 complete
+Status: Phase 2 Plan 1 complete — signing page and save endpoint built. Awaiting deploy + human verification (Plan 02-02).
+Last activity: 2026-02-28 — sign.html and api/save-signature.php created; full send-sign-confirm loop complete.
 
-Progress: [█████░░░░░] 50%
+Progress: [███████░░░] 62%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
+- Total plans completed: 4
 - Average duration: 2min
-- Total execution time: 6min
+- Total execution time: 8min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation-auth-dispatch | 3/3 ✓ | 6min | 2min |
+| 02-signature-capture-and-confirmation | 1/2 | 2min | 2min |
 
 **Recent Trend:**
-- Last 5 plans: 1min, 2min, 2min
+- Last 5 plans: 1min, 2min, 2min, 2min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -54,6 +55,9 @@ Recent decisions affecting current work:
 - [Phase 01-03]: iconv UTF-8 -> ISO-8859-8 required for Hebrew SMS via Micropay — raw UTF-8 produces garbled chars on phone
 - [Phase 01-03]: cURL used (not file_get_contents) for Micropay API — provides timeout control and curl_error() detection
 - [Phase 01-03]: Raw Micropay result included in ok:true JSON response — aids debugging since response format is undocumented
+- [Phase 02-01]: sign.html is fully public — no session auth; signing URL is the authorization token
+- [Phase 02-01]: SMS failure does NOT cause ok:false — PNG is the record of truth, SMS is notification only
+- [Phase 02-01]: signaturePad.clear() called in resizeCanvas() to prevent isEmpty() false positive bug after canvas resize
 
 ### Pending Todos
 
@@ -67,5 +71,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Phase 1 complete. Next: /gsd:plan-phase 2
+Stopped at: Completed 02-01-PLAN.md — sign.html and api/save-signature.php ready for deploy + human test
 Resume file: None
