@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כניסה</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>כניסה למערכת</h1>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">שם משתמש</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="שם משתמש"
+                    autocomplete="username"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">סיסמא</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="סיסמא"
+                    autocomplete="current-password"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary">כניסה</button>
+        </form>
+
+        <!-- Error message — hidden by default; JS sets textContent and shows/hides it -->
+        <div id="error-msg" class="error-msg" style="display:none;"></div>
+    </div>
+
+    <script>
+        // On page load: check if user is already logged in.
+        // If yes, skip the login page and go straight to dashboard.
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('api/check-session.php')
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data.ok === true) {
+                        // Already authenticated — redirect to dashboard
+                        window.location.href = 'dashboard.html';
+                    }
+                })
+                .catch(function () {
+                    // Network error on session check — stay on login page silently
+                });
+        });
+
+        // Handle login form submission via fetch (no page reload on error)
+        document.getElementById('login-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            var username = document.getElementById('username').value;
+            var password = document.getElementById('password').value;
+            var errorDiv = document.getElementById('error-msg');
+
+            // Clear any previous error
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+
+            fetch('api/login.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: username, password: password })
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data.ok === true) {
+                        // Credentials accepted — go to dashboard
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        // Server returned Hebrew error message (AUTH-02)
+                        errorDiv.textContent = data.message;
+                        errorDiv.style.display = 'block';
+                    }
+                })
+                .catch(function () {
+                    // Network or JSON parse error — show generic Hebrew communication error
+                    errorDiv.textContent = 'שגיאת תקשורת — נסה שוב';
+                    errorDiv.style.display = 'block';
+                });
+        });
+    </script>
+</body>
+</html>
