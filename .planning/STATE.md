@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-27)
 
 **Core value:** A user can dispatch a signature request via SMS and receive a signed document back — the full send-sign-confirm loop must work end to end.
-**Current focus:** Phase 2 in progress — sign.html and api/save-signature.php built, ready for deploy + human verify
+**Current focus:** PROJECT COMPLETE — all phases verified. Full dispatch-sign-confirm loop proven on real phone.
 
 ## Current Position
 
-Phase: 2 of 2 — IN PROGRESS (Signature Capture and Confirmation)
-Plan: 1/2 complete
-Status: Phase 2 Plan 1 complete — signing page and save endpoint built. Awaiting deploy + human verification (Plan 02-02).
-Last activity: 2026-02-28 — sign.html and api/save-signature.php created; full send-sign-confirm loop complete.
+Phase: 2 of 2 — COMPLETE (Signature Capture and Confirmation)
+Plan: 2/2 complete
+Status: COMPLETE — all Phase 1 and Phase 2 must-haves verified by Sharon on real phone.
+Last activity: 2026-02-28 — human verified full dispatch-sign-confirm loop end-to-end, all 7 checks passed.
 
-Progress: [███████░░░] 62%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -28,7 +28,7 @@ Progress: [███████░░░] 62%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation-auth-dispatch | 3/3 ✓ | 6min | 2min |
-| 02-signature-capture-and-confirmation | 1/2 | 2min | 2min |
+| 02-signature-capture-and-confirmation | 2/2 ✓ | 2min | 1min |
 
 **Recent Trend:**
 - Last 5 plans: 1min, 2min, 2min, 2min
@@ -58,6 +58,9 @@ Recent decisions affecting current work:
 - [Phase 02-01]: sign.html is fully public — no session auth; signing URL is the authorization token
 - [Phase 02-01]: SMS failure does NOT cause ok:false — PNG is the record of truth, SMS is notification only
 - [Phase 02-01]: signaturePad.clear() called in resizeCanvas() to prevent isEmpty() false positive bug after canvas resize
+- [Phase 02-02]: GD extension confirmed available on ch-ah.info production PHP 8.x — imagecreatefromstring() succeeds
+- [Phase 02-02]: signatures/ .htaccess deny-all protection confirmed working — 403 on directory and direct file URL in production
+- [Phase 02-02]: Full dispatch-sign-confirm loop verified end-to-end on real phone with real Micropay SMS delivery
 
 ### Pending Todos
 
@@ -71,5 +74,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 02-01-PLAN.md — sign.html and api/save-signature.php ready for deploy + human test
+Stopped at: Completed 02-02-PLAN.md — human verification approved, project complete
 Resume file: None
