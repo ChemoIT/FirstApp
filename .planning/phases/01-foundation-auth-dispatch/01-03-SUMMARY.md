@@ -51,7 +51,7 @@ completed: 2026-02-27
 
 ## Status
 
-**Auto tasks: COMPLETE. Checkpoint (Task 3): PENDING — awaiting human verification after deployment.**
+**COMPLETE — All tasks done, checkpoint approved by Sharon (2026-02-28).**
 
 ## Performance
 
@@ -72,7 +72,7 @@ Each task committed atomically:
 
 1. **Task 1: Create api/send-sms.php with session guard and Micropay cURL call** — `e6e4594` (feat)
 2. **Task 2: Create dashboard.html protected dispatch page with session guard and SMS dispatch UI** — `ec1dd00` (feat)
-3. **Task 3: Verify full login-to-SMS flow** — PENDING (checkpoint:human-verify)
+3. **Task 3: Verify full login-to-SMS flow** — ✓ APPROVED (human-verify, 2026-02-28)
 
 ## Files Created/Modified
 
@@ -90,23 +90,20 @@ Each task committed atomically:
 
 None — plan executed exactly as written.
 
-## Pending: Task 3 — Human Verification Checkpoint
+## Human Verification: APPROVED
 
-**What to do:** Push code to GitHub (ChemoIT/FirstApp) and deploy to ch-ah.info/FirstApp/ via FTP, then verify:
+All 6 checks passed on 2026-02-28 after automated FTP deployment via GitHub Actions:
 
-1. Open https://ch-ah.info/FirstApp/ — Hebrew login form visible with "כניסה למערכת" heading
-2. Enter username "test" / password "wrong" — should see Hebrew error "שם כניסה או סיסמא לא תקינים" in red
-3. Enter username "Sharonb" / password "1532" — should redirect to dispatch page "דף שיגור חתימה"
-4. Refresh the dispatch page (F5) — should remain on dispatch page, not redirected to login
-5. Open a private/incognito window, navigate directly to https://ch-ah.info/FirstApp/dashboard.html — should redirect to login page
-6. In the logged-in window, click "שלח בקשת חתימה" — check phone 0526804680 for SMS with "היכנס לקישור הבא:" and the signing link
-
-**Respond with "approved" when all 6 checks pass, or describe which steps failed.**
+1. ✓ Hebrew login form visible at ch-ah.info/FirstApp/
+2. ✓ Wrong credentials show Hebrew error
+3. ✓ Sharonb / 1532 reaches dispatch page
+4. ✓ Session survives page refresh
+5. ✓ Unauthorized access redirects to login
+6. ✓ SMS dispatched and received on phone
 
 ---
 *Phase: 01-foundation-auth-dispatch*
-*Auto tasks completed: 2026-02-27*
-*Checkpoint status: Awaiting human verification after deployment*
+*Completed: 2026-02-28*
 
 ## Self-Check: PASSED
 
