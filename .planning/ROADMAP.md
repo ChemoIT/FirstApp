@@ -25,12 +25,12 @@ FirstApp is built in two phases that mirror the two sides of the signing loop. P
   3. Entering Sharonb / 1532 reaches the dispatch page "דף שיגור חתימה" and the session survives a page refresh
   4. Visiting the dispatch page URL directly without being logged in redirects back to login
   5. Clicking the dispatch button sends an SMS to 0526804680 with a Hebrew message and a link — Sharon sees success or error feedback and the SMS arrives on the phone
-**Plans**: TBD
+**Plans**: 3 plans in 3 waves (sequential — each plan depends on the prior)
 
 Plans:
-- [ ] 01-01: Folder structure, api/config.php, and .htaccess security skeleton
-- [ ] 01-02: Login page (index.html) and PHP session auth (api/login.php)
-- [ ] 01-03: Protected dispatch page (dashboard.html) and SMS send endpoint (api/send-sms.php)
+- [ ] 01-01-PLAN.md — Folder structure, api/config.php, .htaccess security skeleton, RTL CSS (Wave 1)
+- [ ] 01-02-PLAN.md — Login page (index.html) and PHP session auth (api/login.php, api/check-session.php) (Wave 2)
+- [ ] 01-03-PLAN.md — Protected dispatch page (dashboard.html) and SMS send endpoint (api/send-sms.php) + human verify (Wave 3)
 
 ### Phase 2: Signature Capture and Confirmation
 **Goal**: The recipient opens the SMS link on their phone, draws a signature with their finger, submits it, and both the recipient and Sharon receive confirmation — the full loop is proven end-to-end
