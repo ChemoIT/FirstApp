@@ -11,7 +11,7 @@ FirstApp is built in two phases that mirror the two sides of the signing loop. P
 - Decimal phases (1.1, 1.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Foundation, Auth, and Dispatch** - Security skeleton, login, protected dispatch page, and SMS sent to phone
-- [ ] **Phase 2: Signature Capture and Confirmation** - Mobile canvas signing, PNG saved to server, confirmation SMS received
+- [x] **Phase 2: Signature Capture and Confirmation** - Mobile canvas signing, PNG saved to server, confirmation SMS received
 
 ## Phase Details
 
@@ -45,8 +45,8 @@ Plans:
 **Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 02-01-PLAN.md — Signing page (sign.html) + save endpoint (api/save-signature.php) with GD validation and confirmation SMS (Wave 1)
-- [ ] 02-02-PLAN.md — End-to-end human verification: full dispatch-sign-confirm loop on real phone (Wave 2)
+- [x] 02-01-PLAN.md — Signing page (sign.html) + save endpoint (api/save-signature.php) with GD validation and confirmation SMS (Wave 1)
+- [x] 02-02-PLAN.md — End-to-end human verification: full dispatch-sign-confirm loop on real phone (Wave 2)
 
 ## Progress
 
@@ -56,4 +56,4 @@ Phases execute in numeric order: 1 → 2
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation, Auth, and Dispatch | 3/3 | ✓ Complete | 2026-02-28 |
-| 2. Signature Capture and Confirmation | 0/2 | Not started | - |
+| 2. Signature Capture and Confirmation | 2/2 | ✓ Complete | 2026-02-28 |
