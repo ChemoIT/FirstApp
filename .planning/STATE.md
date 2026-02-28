@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** A user can dispatch a signature request via SMS and receive a signed document back — the full send-sign-confirm loop must work end to end.
-**Current focus:** v2.0 Phase 4 — Admin Read and Create
+**Current focus:** v2.0 Phase 5 — Admin Update, Delete, Block, Suspend
 
 ## Current Position
 
 Milestone: v2.0 User Management
-Phase: 4 of 6 (Admin Read and Create) — COMPLETE
-Plan: Phase 04 fully complete — both plans (04-01 API endpoints, 04-02 admin UI) verified in production
-Status: admin.php deployed and verified by Sharon (10-point human checkpoint passed). Phase 04 done.
-Last activity: 2026-02-28 — Phase 04-02 complete; admin.php verified end-to-end at ch-ah.info
+Phase: 5 of 6 (Admin Update, Delete, Block, Suspend) — IN PROGRESS
+Plan: Phase 05 Plan 01 complete (API endpoints: update.php + delete.php). Next: Plan 05-02 (admin UI actions)
+Status: update.php and delete.php created, syntax-verified, committed. Plan 05-01 done.
+Last activity: 2026-02-28 — Phase 05-01 complete; two PHP endpoints created and committed
 
-Progress: [█████░░░░░] 60% (v1.0 complete; v2.0 phases 3-4 done, phases 5-6 pending)
+Progress: [██████░░░░] 70% (v1.0 complete; v2.0 phases 3-5 in progress, phase 6 pending)
 
 ## Performance Metrics
 
@@ -32,6 +32,7 @@ Progress: [█████░░░░░] 60% (v1.0 complete; v2.0 phases 3-4 d
 |-------|------|----------|-------|-------|
 | 04    | 01   | 2min     | 2     | 2     |
 | 04    | 02   | ~15min   | 2     | 1     |
+| 05    | 01   | 2min     | 2     | 2     |
 
 ## Accumulated Context
 
@@ -62,6 +63,12 @@ Phase 4 Plan 02 decisions:
 - crypto.getRandomValues for password generator — CSPRNG, not Math.random(); field type toggled to text on generate
 - loadUsers() as reusable function — called on DOMContentLoaded and after successful create (no full page reload)
 
+Phase 5 Plan 01 decisions:
+- Single update.php endpoint with action dispatch (edit/block/suspend) — smaller surface area vs separate files
+- id_number excluded from edit action — identity documents immutable after creation (RESEARCH.md Open Question 1)
+- block action clears suspended_until to null — PHP null → JSON null → PostgreSQL NULL on TIMESTAMPTZ column
+- delete.php checks http_code 204 (not 200) — DELETE returns 204 No Content per PostgREST spec
+
 ### Pending Todos
 
 None.
@@ -74,5 +81,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Phase 04 complete — both plans verified in production; next is Phase 05 (admin update/delete)
+Stopped at: Phase 05 Plan 01 complete — api/users/update.php and api/users/delete.php created; next is Phase 05 Plan 02 (admin UI actions)
 Resume file: None
