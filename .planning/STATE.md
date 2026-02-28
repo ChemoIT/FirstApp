@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** A user can dispatch a signature request via SMS and receive a signed document back — the full send-sign-confirm loop must work end to end.
-**Current focus:** v2.0 Phase 6 — Login Replacement (next)
+**Current focus:** v2.0 COMPLETE — all 6 phases verified in production
 
 ## Current Position
 
-Milestone: v2.0 User Management
-Phase: 5 of 6 (Admin Update, Delete, Block, Suspend) — COMPLETE
-Plan: Phase 05 fully complete — both plans (05-01 API endpoints, 05-02 admin UI) verified in production
-Status: All 4 admin actions (edit, delete, block, suspend) working end-to-end. Human checkpoint passed (8 points).
-Last activity: 2026-02-28 — Phase 05 complete; admin.php full CRUD verified at ch-ah.info
+Milestone: v2.0 User Management — COMPLETE
+Phase: 6 of 6 (Login Replacement) — COMPLETE
+Plan: Phase 06 fully complete — Supabase-backed login, status enforcement, logout fix verified in production
+Status: All v2.0 phases done. Login now validates against real Supabase users. Hardcoded sharonb/1532 credentials permanently removed.
+Last activity: 2026-02-28 — Phase 06 complete; login replacement verified at ch-ah.info
 
-Progress: [████████░░] 80% (v1.0 complete; v2.0 phases 3-5 done, phase 6 pending)
+Progress: [██████████] 100% (v2.0 complete — all 6 phases done)
 
 ## Performance Metrics
 
@@ -25,8 +25,8 @@ Progress: [████████░░] 80% (v1.0 complete; v2.0 phases 3-5 d
 - Timeline: 1 day (2026-02-27 → 2026-02-28)
 
 **v2.0 Summary:**
-- Phases: 4 (phases 3-6) | Plans: TBD | LOC: TBD
-- Total execution time: ~2min so far
+- Phases: 4 (phases 3-6) | Plans: 6 | LOC: ~500
+- Total execution time: ~39min
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
@@ -34,6 +34,7 @@ Progress: [████████░░] 80% (v1.0 complete; v2.0 phases 3-5 d
 | 04    | 02   | ~15min   | 2     | 1     |
 | 05    | 01   | 2min     | 2     | 2     |
 | 05    | 02   | ~5min    | 1+cp  | 2     |
+| 06    | 01   | ~15min   | 2+fix | 5     |
 
 ## Accumulated Context
 
@@ -76,6 +77,13 @@ Phase 5 Plan 02 decisions:
 - escHtml() applied to all user data in both column cells and data-* attributes — full XSS coverage
 - suspended_until added to list.php SELECT — required for statusBadge() to display date without second API call
 
+Phase 6 Plan 01 decisions:
+- Generic error 'פרטי הכניסה שגויים' used for ALL auth failure paths — never reveal which step failed (email not found, wrong password, blocked, suspended)
+- session_regenerate_id(true) called before $_SESSION assignment — session fixation protection
+- filter_var FILTER_VALIDATE_EMAIL applied before Supabase call — avoids wasted API round-trip on malformed input
+- api/logout.php created (not in original plan) — session_destroy() before redirect is required; client-side redirect alone causes infinite redirect loop
+- api/config.php remains gitignored — ADMIN_USER/ADMIN_PASS removal is local-only, never enters git history
+
 ### Pending Todos
 
 None.
@@ -88,5 +96,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Phase 05 complete — all admin CRUD operations verified in production; next is Phase 06 (login replacement)
+Stopped at: Phase 06 complete — v2.0 milestone done; Supabase login verified in production; hardcoded credentials removed
 Resume file: None
