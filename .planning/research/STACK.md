@@ -1,98 +1,232 @@
 # Technology Stack
 
-**Project:** FirstApp — Signature Dispatch System
-**Researched:** 2026-02-27
-**Research tools available:** Training data only (WebSearch/WebFetch/Context7 unavailable in this session)
+**Project:** FirstApp v2.0 — Supabase User Management Milestone
+**Researched:** 2026-02-28
+**Confidence:** HIGH (verified via WebSearch + official Supabase docs)
 
 ---
 
-## Recommended Stack
+## Context: What This Milestone Adds
 
-### Core Framework
+This is a SUBSEQUENT MILESTONE file. The v1.0 stack (PHP, cURL, vanilla JS, cPanel, signature_pad) is validated and unchanged. This document covers ONLY the new additions required for Supabase-backed user management.
 
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| PHP | 8.2.x | Backend logic, SMS API calls, file I/O, session auth | cPanel standard; 8.2 is active support through Dec 2026; 8.3+ may not be available on all shared hosts. Required for server-side token hiding. |
-| HTML5 | Living Standard | Page structure, Canvas element | Native browser API; no dependencies; RTL via `dir="rtl"` attribute. |
-| CSS3 | — | Styling, RTL layout, mobile responsiveness | Native; `direction: rtl` and `text-align: right` built-in; no framework overhead. |
-| Vanilla JavaScript (ES6+) | — | Canvas interaction, fetch calls to PHP endpoints | No build step; runs directly in browser; appropriate for learning project scope. |
-
-### Signature Canvas
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| signature_pad (szimek) | 4.x (latest: 4.1.7 as of Aug 2025) | Finger-draw signature capture on HTML5 Canvas | The de facto standard library for this use case. Handles pointer events, touch events, pressure sensitivity, and cross-browser quirks that raw Canvas API does not handle well. MIT license. CDN-available, no build step. |
-
-**Confidence:** MEDIUM — version 4.1.7 is from training data (Aug 2025 cutoff). Verify current version at https://github.com/szimek/signature_pad/releases before pinning.
-
-**Why not raw Canvas API:** Drawing smooth bezier curves from touch events requires Catmull-Rom or similar interpolation. Building this manually adds ~100+ lines of fiddly code. signature_pad solves it correctly in one `<script>` tag. For a learning project, this is the right tradeoff — learn the concept, don't reimplement a solved problem.
-
-### PHP Modules Required
-
-| Module | Purpose | Why |
-|--------|---------|-----|
-| `session` | Login state management | Built into PHP core; `session_start()` + `$_SESSION` is the simplest possible stateful auth |
-| `gd` or `imagick` | PNG save from base64 canvas data | Needed to decode the base64 PNG that the Canvas/JS sends and write it to disk |
-| `curl` or `file_get_contents` with `allow_url_fopen` | Micropay SMS API (GET request) | `file_get_contents(url)` is simplest for a single GET; cPanel hosts almost always have this enabled |
-| `openssl` | HTTPS (handled by host, not your code) | Already active on ch-ah.info; no action needed |
-
-**Confidence:** HIGH — these are core PHP modules present on every cPanel shared host.
-
-### Infrastructure
-
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| cPanel Shared Hosting (ch-ah.info) | — | Web server, file storage, PHP execution | Already decided by constraint. Apache + mod_php is the standard cPanel stack. |
-| Apache `.htaccess` | — | Redirect rules, directory protection | Required to block direct access to `signatures/` folder and enforce HTTPS redirect |
-| FTP / cPanel File Manager | — | Deployment | Standard cPanel deployment; no CI/CD needed for this scope |
-
-### Supporting Libraries / Utilities
-
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| signature_pad (CDN) | 4.x | Canvas signature drawing | Loaded via `<script src="https://cdn.jsdelivr.net/npm/signature_pad@4/dist/signature_pad.umd.min.js">` on the sign.php page only |
-| No CSS framework | — | — | Bootstrap/Tailwind is overkill for 3 pages. Write 50 lines of plain CSS instead. |
-| No JavaScript framework | — | — | React/Vue adds build tooling complexity for zero benefit here. |
-| No database | — | — | No persistent state beyond PNG files. SQLite or MySQL would be over-engineering. |
+**New capabilities needed:**
+1. PHP → Supabase PostgREST REST API (CRUD on a `users` table)
+2. PHP → Supabase GoTrue Auth Admin API (create/delete auth users)
+3. Admin UI: create, edit, delete, block, suspend users
+4. Login: email + password authentication via Supabase GoTrue
 
 ---
 
-## PHP Configuration for cPanel
+## Recommended Stack Additions
 
-These settings matter for this project specifically:
+### New API Surfaces (No New Libraries — Pure cURL)
 
-```ini
-; Verify these in cPanel → PHP Selector or php.ini override
-upload_max_filesize = 2M      ; Signature PNGs are small; default is fine
-post_max_size = 8M            ; Fine as-is
-session.save_path = /tmp      ; cPanel default; sessions work without changes
-allow_url_fopen = On          ; Required for file_get_contents() SMS call
-display_errors = Off          ; Never show errors in production
-log_errors = On               ; Log to error_log file instead
-error_log = /home/[user]/logs/php_errors.log
-```
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Supabase PostgREST | v12.x (hosted, auto-updated) | CRUD on `public.users` table via REST | Already proven PHP cURL pattern. No new library. JSON over HTTP. |
+| Supabase GoTrue Auth API | v2.x (hosted, auto-updated) | Create/delete/update users in `auth.users` | Admin operations (create user with email+password, delete, ban) require GoTrue, not PostgREST. Service role key required. |
+| PHP cURL (existing) | Built into PHP 7.4/8.x | HTTP client for all Supabase calls | Already used for Micropay SMS. Same pattern extended to Supabase. No new dependency. |
 
-**PHP version selection in cPanel:** Go to cPanel → Software → MultiPHP Manager → set ch-ah.info to PHP 8.2. Avoid PHP 7.x (security EOL). PHP 8.3 is safe if available, but 8.2 has the widest shared hosting support as of early 2026.
+**Decision: No PHP Supabase SDK.** The community library `phpsupabase` (rafaelwendel) requires Composer, is not officially supported by Supabase, and was created in 2021 with uncertain maintenance status. Raw cURL calls to documented REST endpoints are more predictable, easier to debug, and have zero dependency risk on cPanel shared hosting where Composer may not be available.
 
-**Confidence:** HIGH for the configuration advice. MEDIUM for "8.2 widest support" — verify PHP Selector options in your actual cPanel panel.
+### PHP Password Hashing (Built-in, No Library)
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `password_hash()` + `password_verify()` | PHP 5.5+ built-in | Hash passwords stored in `public.users` | Native PHP function; bcrypt by default; handles salt automatically; works on any PHP 7.x/8.x cPanel host. Zero dependencies. |
+
+**Algorithm choice:** Use `PASSWORD_DEFAULT` (bcrypt, cost 10). On cPanel shared hosting with limited CPU, Argon2id is overkill and may slow login. Bcrypt at cost 10 is industry-standard for this context.
+
+### Admin UI (No New Frontend Libraries)
+
+| Technology | Purpose | Why |
+|------------|---------|-----|
+| Existing vanilla JS + HTML/CSS | Admin page UI (table, forms, modal) | No framework needed for a data table + form. Bootstrap or React would add complexity for what is a CRUD form. Same FTP-deployable pattern as v1.0. |
+| `fetch()` API (browser built-in) | AJAX calls from admin.php to PHP endpoints | Already used in v1.0. No library needed. |
 
 ---
 
-## File Structure Recommendation
+## Supabase API Integration Details
+
+### Two Separate API Surfaces
+
+**PostgREST** — for your own `public.users` table (custom fields: name, phone, gender, etc.)
 
 ```
-FirstApp/
-├── index.php          ← Login form (POST → validates hardcoded creds → session → redirect)
-├── dispatch.php       ← Protected page: send SMS button (checks session at top)
-├── sign.php           ← Public mobile page: Canvas + signature_pad
-├── save-signature.php ← AJAX endpoint: receives base64 PNG, saves to disk, sends confirm SMS
-├── logout.php         ← Destroys session, redirects to index.php
-├── signatures/        ← Saved PNG files (must be web-inaccessible or .htaccess protected)
-│   └── .htaccess      ← "Deny from all" — blocks direct URL access to PNGs
-├── css/
-│   └── style.css      ← 50-80 lines of RTL-ready mobile CSS
-└── .htaccess          ← Root: force HTTPS, disable directory listing
+Base URL: https://<project_ref>.supabase.co/rest/v1
 ```
+
+**GoTrue Auth API** — for Supabase's built-in auth system (email + password login)
+
+```
+Base URL: https://<project_ref>.supabase.co/auth/v1
+```
+
+These are different services. You will call BOTH from PHP.
+
+### Required Headers for All Supabase Calls
+
+```php
+$headers = [
+    'Content-Type: application/json',
+    'apikey: ' . SUPABASE_SERVICE_ROLE_KEY,
+    'Authorization: Bearer ' . SUPABASE_SERVICE_ROLE_KEY,
+];
+```
+
+Both `apikey` and `Authorization: Bearer` must be sent together. `apikey` is consumed by the Supabase API gateway; `Authorization` is consumed by PostgREST/GoTrue for RLS/admin privilege checks.
+
+**Service role key** — bypasses Row Level Security, required for admin operations. Must stay server-side in PHP only. Never in JS, never echoed to page.
+
+### PostgREST CRUD Endpoints
+
+| Operation | Method | URL | Extra Headers |
+|-----------|--------|-----|---------------|
+| List all users | GET | `/rest/v1/users` | — |
+| Get one user | GET | `/rest/v1/users?id=eq.{id}` | — |
+| Create user | POST | `/rest/v1/users` | `Prefer: return=representation` |
+| Update user | PATCH | `/rest/v1/users?id=eq.{id}` | `Prefer: return=representation` |
+| Delete user | DELETE | `/rest/v1/users?id=eq.{id}` | — |
+
+`Prefer: return=representation` makes Supabase return the created/updated row. Without it, you get an empty 204 response — fine for delete, needed for create/update to get back the `id`.
+
+### GoTrue Auth Admin Endpoints (for auth.users)
+
+| Operation | Method | URL | Notes |
+|-----------|--------|-----|-------|
+| Sign in (login) | POST | `/auth/v1/token?grant_type=password` | Body: `{"email":"...","password":"..."}` — returns JWT access_token |
+| Create auth user | POST | `/auth/v1/admin/users` | Body: `{"email":"...","password":"...","email_confirm":true}` |
+| List auth users | GET | `/auth/v1/admin/users` | Returns paginated list |
+| Update auth user | PUT | `/auth/v1/admin/user/{user_id}` | Body: `{"email":"...","password":"...","ban_duration":"876600h"}` |
+| Delete auth user | DELETE | `/auth/v1/admin/user/{user_id}` | Permanently removes from auth.users |
+
+**Note on `ban_duration`:** Supabase GoTrue supports banning users by setting `ban_duration` to a duration string (e.g. `"876600h"` = 100 years = effectively permanent). This is how you implement "blocked" status via the auth system.
+
+### PHP cURL Helper Pattern
+
+This reusable function covers all Supabase calls:
+
+```php
+/**
+ * Make an authenticated HTTP call to Supabase REST or Auth API.
+ *
+ * @param string $method  GET | POST | PATCH | PUT | DELETE
+ * @param string $url     Full Supabase endpoint URL
+ * @param array  $body    Request body (will be JSON-encoded). Null for GET/DELETE.
+ * @param array  $extra_headers  Additional headers (e.g. Prefer: return=representation)
+ * @return array  ['status' => int, 'body' => mixed]
+ */
+function supabase_request(string $method, string $url, ?array $body = null, array $extra_headers = []): array {
+    $ch = curl_init($url);
+
+    $headers = array_merge([
+        'Content-Type: application/json',
+        'apikey: ' . SUPABASE_SERVICE_ROLE_KEY,
+        'Authorization: Bearer ' . SUPABASE_SERVICE_ROLE_KEY,
+    ], $extra_headers);
+
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CUSTOMREQUEST  => $method,
+        CURLOPT_HTTPHEADER     => $headers,
+        CURLOPT_TIMEOUT        => 10,
+        CURLOPT_SSL_VERIFYPEER => true,
+    ]);
+
+    if ($body !== null) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
+    }
+
+    $response = curl_exec($ch);
+    $status   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error    = curl_error($ch);
+    curl_close($ch);
+
+    if ($error) {
+        error_log("Supabase cURL error [{$method} {$url}]: {$error}");
+        return ['status' => 0, 'body' => null, 'error' => $error];
+    }
+
+    return ['status' => $status, 'body' => json_decode($response, true)];
+}
+```
+
+### Configuration File Pattern
+
+Store Supabase credentials in a PHP config file, excluded from git:
+
+```php
+<?php
+// config.php — NOT committed to GitHub (add to .gitignore)
+define('SUPABASE_URL',              'https://xxxxxxxxxxxx.supabase.co');
+define('SUPABASE_SERVICE_ROLE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...');
+define('SUPABASE_REST_URL',         SUPABASE_URL . '/rest/v1');
+define('SUPABASE_AUTH_URL',         SUPABASE_URL . '/auth/v1');
+```
+
+---
+
+## Architecture Decision: Where Passwords Live
+
+**Decision: Dual storage — GoTrue auth + public.users profile table.**
+
+- `auth.users` (Supabase GoTrue) — stores email + hashed password. Handles login token issuance.
+- `public.users` (your own table) — stores profile fields: first_name, last_name, id_number, phone, gender, foreign_worker, status (active/blocked/suspended).
+
+**Why dual, not single table:**
+
+| Option | Pro | Con |
+|--------|-----|-----|
+| GoTrue only (`auth.users`) | Single source of truth for auth | Cannot store custom fields (gender, foreign_worker, id_number) without workarounds in user_metadata JSON blob — messy to query/filter |
+| Custom table only (`public.users` with password_hash) | Full control, simple SQL | Must implement your own session token system; skips Supabase's built-in auth features |
+| **Dual (GoTrue + public.users)** | Clean separation: GoTrue handles login tokens; public.users handles business fields | Two API calls on create/delete — manageable with the cURL helper |
+
+**The link:** `public.users.auth_id` = UUID from `auth.users.id`. Created together in one PHP transaction on the admin "create user" action.
+
+**Login flow:** POST to GoTrue `/auth/v1/token?grant_type=password` → validates credentials → returns JWT → PHP stores `access_token` in PHP `$_SESSION` → subsequent requests validate session. No client-side token storage.
+
+---
+
+## What NOT to Add
+
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| `phpsupabase` Composer library | Requires Composer (uncertain on cPanel), unofficial, 2021 vintage, uncertain maintenance | Raw PHP cURL to documented REST endpoints |
+| Supabase JS Client SDK | Service role key would be exposed in browser JS | Server-side PHP cURL only |
+| Any CSS framework (Bootstrap, Tailwind) | Admin page is a simple CRUD table + form; 80 lines of plain CSS handles it | Plain CSS (same pattern as v1.0) |
+| React/Vue for admin UI | Requires Node.js build step, incompatible with FTP deploy | Vanilla JS + `fetch()` for AJAX |
+| Argon2id for password hashing | Memory-intensive; may cause issues on shared hosting CPU limits | `password_hash($pwd, PASSWORD_DEFAULT)` = bcrypt cost 10 |
+| Supabase Realtime websockets | Not needed for admin CRUD | Plain HTTP REST calls |
+| JWT library in PHP | You don't need to decode JWTs server-side for this app; PHP session stores the token opaquely | PHP `$_SESSION` |
+
+---
+
+## Database Schema Addition
+
+New table to create in Supabase Dashboard or migration:
+
+```sql
+CREATE TABLE public.users (
+    id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    auth_id       UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    first_name    TEXT NOT NULL,
+    last_name     TEXT NOT NULL,
+    id_number     TEXT,
+    phone         TEXT,
+    gender        TEXT CHECK (gender IN ('male', 'female', 'other')),
+    foreign_worker BOOLEAN DEFAULT false,
+    email         TEXT NOT NULL UNIQUE,
+    status        TEXT DEFAULT 'active' CHECK (status IN ('active', 'blocked', 'suspended')),
+    created_at    TIMESTAMPTZ DEFAULT now(),
+    updated_at    TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS but service role bypasses it — safe for PHP backend
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+```
+
+`status` field in `public.users` is the source of truth for UI display. `ban_duration` in GoTrue enforces the auth-level block (prevents login token issuance even if user knows the password).
 
 ---
 
@@ -100,89 +234,48 @@ FirstApp/
 
 | Category | Recommended | Alternative | Why Not |
 |----------|-------------|-------------|---------|
-| Signature library | signature_pad 4.x | Raw HTML5 Canvas API | Raw canvas requires manual bezier interpolation for smooth strokes — 100+ lines of fiddly code; not worth it for this scope |
-| Signature library | signature_pad 4.x | jSignature (jQuery-based) | Requires jQuery dependency; last significant update was 2018; effectively unmaintained |
-| CSS framework | None (plain CSS) | Bootstrap 5 | Adds 200KB for 3 simple pages; RTL requires extra Bootstrap RTL bundle; overkill |
-| JavaScript framework | None (vanilla JS) | React / Vue | Requires Node.js build pipeline; incompatible with simple FTP deployment; wrong tool for this scale |
-| Backend | PHP | Node.js | cPanel shared hosting does not support persistent Node.js server processes — PHP is the only backend option here |
-| Auth | PHP sessions | JWT tokens | JWT is stateless API auth; overkill and more complex than sessions for a single-user app with server-rendered pages |
-| Storage | File system (PNG) | MySQL database | No relational data to store; PNG files in a folder is simpler, faster to implement, and perfectly sufficient |
-| SMS API call | `file_get_contents()` | cURL | Both work; `file_get_contents` is 1 line vs 8 lines of cURL setup for a simple GET request. Use cURL only if you need SSL verification control. |
+| User data store | Supabase PostgreSQL via REST | MySQL on cPanel | Supabase is already the chosen constraint for this milestone; MySQL would require adding DB credentials management, mysqli/PDO library, and has no admin API for auth |
+| Auth system | Supabase GoTrue (via HTTP) | PHP sessions with bcrypt only (no GoTrue) | GoTrue provides the login endpoint and handles password hashing on Supabase's side — less PHP code to maintain |
+| PHP→Supabase client | Raw cURL | phpsupabase library | Library requires Composer, unofficial, uncertain maintenance |
+| Admin UI | PHP-rendered HTML + vanilla JS fetch | Single-page React app | SPA adds build step and FTP-deploy incompatibility |
 
 ---
 
-## Installation / Integration
+## Installation / Setup Steps
 
-```php
-<!-- In sign.php <head> — no npm, no build step -->
-<script src="https://cdn.jsdelivr.net/npm/signature_pad@4/dist/signature_pad.umd.min.js"></script>
-```
+No npm installs. No Composer installs. Setup is:
 
-```javascript
-// Minimal signature_pad setup (sign.php)
-const canvas = document.getElementById('signature-canvas');
-const signaturePad = new SignaturePad(canvas, {
-  backgroundColor: 'rgb(255, 255, 255)', // Required for PNG with white background
-  penColor: 'rgb(0, 0, 0)'
-});
-
-// Resize canvas to device pixel ratio (prevents blurry signatures on HiDPI screens)
-function resizeCanvas() {
-  const ratio = Math.max(window.devicePixelRatio || 1, 1);
-  canvas.width = canvas.offsetWidth * ratio;
-  canvas.height = canvas.offsetHeight * ratio;
-  canvas.getContext('2d').scale(ratio, ratio);
-  signaturePad.clear(); // Clear on resize to prevent distortion
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-
-// Export as PNG for PHP endpoint
-function submitSignature() {
-  if (signaturePad.isEmpty()) {
-    alert('נא לחתום לפני שליחה'); // Hebrew: "Please sign before submitting"
-    return;
-  }
-  const dataURL = signaturePad.toDataURL('image/png');
-  // POST dataURL to save-signature.php via fetch()
-}
-```
-
-```php
-<?php
-// save-signature.php — Save base64 PNG to disk
-session_start();
-$data = $_POST['signature']; // base64 data URL from JS
-
-// Strip the "data:image/png;base64," prefix
-$imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $data));
-
-$filename = 'signatures/' . uniqid('sig_', true) . '.png';
-file_put_contents($filename, $imageData);
-
-// Send confirmation SMS via Micropay (GET request)
-// Token stored only here in PHP — never in JS
-$token = 'YOUR_MICROPAY_TOKEN';
-$phone = '0526804680';
-$message = urlencode(iconv('UTF-8', 'ISO-8859-8', 'המסמך נחתם'));
-file_get_contents("https://api.micropay.co.il/send?token={$token}&to={$phone}&msg={$message}");
-
-echo json_encode(['status' => 'ok', 'file' => $filename]);
-?>
-```
+1. Create Supabase project at supabase.com (free tier sufficient)
+2. Run the SQL schema above in Supabase Dashboard → SQL Editor
+3. Copy Project URL + service role key from Dashboard → Settings → API
+4. Create `config.php` with those values (add to `.gitignore`)
+5. Enable Email provider in Supabase Dashboard → Authentication → Providers → Email (disable email confirmation for internal app)
+6. Write PHP endpoints: `admin.php`, `api/users.php` (CRUD), `api/auth.php` (login)
 
 ---
 
-## Security Essentials for This Stack
+## Version Compatibility
+
+| Component | Version | Compatibility Notes |
+|-----------|---------|---------------------|
+| PHP cURL | Built into PHP 7.4+ | Available on all cPanel hosts; no version conflict |
+| Supabase PostgREST | v12.x (hosted) | Supabase manages upgrades; no action needed |
+| Supabase GoTrue | v2.x (hosted) | Supabase manages upgrades; no action needed |
+| `password_hash()` | PHP 5.5+ | Full support on PHP 7.4 and PHP 8.x |
+| PHP `$_SESSION` | All PHP versions | No compatibility concern |
+
+---
+
+## Security Checklist for This Milestone
 
 | Risk | Prevention |
 |------|------------|
-| Micropay token exposed in client JS | Token lives only in PHP files. Never echoed to page. |
-| Direct URL access to saved PNGs | `signatures/.htaccess` with `Deny from all` |
-| Session fixation | Call `session_regenerate_id(true)` after successful login |
-| Path traversal in filename | Use `uniqid()` for filenames — never user input |
-| Unauthenticated access to dispatch.php | First line: `session_start(); if (!isset($_SESSION['user'])) { header('Location: index.php'); exit; }` |
-| Directory listing of signatures/ | Root `.htaccess`: `Options -Indexes` |
+| Service role key in JS | Lives only in `config.php` on server. Never echoed to page output. |
+| Service role key in git | `config.php` in `.gitignore`. GitHub Actions uses repository secrets. |
+| SQL injection via PostgREST | Not applicable — PostgREST uses URL query params, not raw SQL. Supabase handles parameterization. |
+| Admin page accessible to non-admins | `admin.php` requires `$_SESSION['user']['role'] === 'admin'` check at top of file |
+| Brute force on login | Supabase GoTrue has built-in rate limiting on `/auth/v1/token` endpoint |
+| User enumeration via login error | Return generic "Invalid credentials" for both wrong email and wrong password |
 
 ---
 
@@ -190,22 +283,29 @@ echo json_encode(['status' => 'ok', 'file' => $filename]);
 
 | Area | Confidence | Reason |
 |------|------------|--------|
-| PHP as backend | HIGH | Dictated by cPanel constraint; no alternative exists |
-| PHP 8.2 recommendation | MEDIUM | Training data Aug 2025; verify cPanel PHP Selector options at ch-ah.info |
-| signature_pad 4.x | MEDIUM | Training data confirms 4.1.7 as of Aug 2025; verify current version at github.com/szimek/signature_pad/releases |
-| signature_pad vs raw Canvas | HIGH | Raw canvas touch interpolation is a well-documented pain point; this tradeoff is stable |
-| No CSS framework | HIGH | 3-page app with straightforward RTL; framework adds zero value |
-| PHP sessions for auth | HIGH | Industry standard for server-rendered PHP single-user apps |
-| file_get_contents for Micropay | HIGH | Simple GET request; this is the standard pattern |
-| PNG file storage | HIGH | No relational data; file system is correct for this scope |
+| PostgREST endpoint patterns | HIGH | Verified via official Supabase docs + WebSearch |
+| GoTrue admin API endpoints | HIGH | Confirmed via official self-hosting auth docs: `/auth/v1/admin/users`, `/auth/v1/token` |
+| Required headers (`apikey` + `Authorization`) | HIGH | Verified via Supabase API keys docs |
+| `Prefer: return=representation` header | HIGH | Verified via PostgREST v12 docs |
+| `ban_duration` for blocking users | MEDIUM | Confirmed in search results as the GoTrue mechanism; verify exact string format ("876600h") in Supabase dashboard test |
+| `password_hash()` bcrypt on cPanel | HIGH | Built-in PHP function since 5.5; no compatibility risk |
+| Dual table architecture (GoTrue + public.users) | HIGH | Standard Supabase pattern for apps with custom user fields |
+| phpsupabase library decision to avoid | MEDIUM | Assessment based on GitHub age (2021) and Composer requirement; library may have improved but raw cURL is safer bet |
 
 ---
 
 ## Sources
 
-- signature_pad GitHub: https://github.com/szimek/signature_pad (training data, Aug 2025 — verify release page for current version)
-- PHP supported versions: https://www.php.net/supported-versions.php (verify PHP 8.2 EOL date)
-- Micropay API: Constraint provided in project spec (GET method, ISO-8859-8, token-based)
-- cPanel PHP configuration: Training data — verify MultiPHP Manager availability at ch-ah.info cPanel
+- Supabase REST API docs: https://supabase.com/docs/guides/api — base URL, CRUD methods
+- Supabase API Keys docs: https://supabase.com/docs/guides/api/api-keys — `apikey` vs service role key, header requirements
+- Supabase GoTrue self-hosting auth API: https://supabase.com/docs/reference/self-hosting-auth/introduction — admin endpoint paths
+- PostgREST v12 Prefer header: https://docs.postgrest.org/en/v12/references/api/preferences.html — `return=representation`
+- PHP password_hash docs: https://www.php.net/manual/en/function.password-hash.php — bcrypt, PASSWORD_DEFAULT
+- phpsupabase GitHub: https://github.com/rafaelwendel/phpsupabase — assessed and rejected (Composer-only, unofficial)
+- Supabase admin API (JS reference, used to infer HTTP layer): https://supabase.com/docs/reference/javascript/admin-api
 
-**Note:** WebSearch and WebFetch tools were unavailable in this research session. All version numbers and PHP support dates are from training data (cutoff Aug 2025). The two items flagged MEDIUM confidence should be spot-checked before the roadmap is finalized.
+---
+
+*Stack research for: Supabase user management — PHP cURL integration*
+*Researched: 2026-02-28*
+*Supersedes: v1.0 STACK.md (which remains valid for base app capabilities)*

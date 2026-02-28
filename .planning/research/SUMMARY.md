@@ -1,17 +1,19 @@
 # Project Research Summary
 
-**Project:** FirstApp — Signature Dispatch System
-**Domain:** PHP signature capture web app on cPanel shared hosting
-**Researched:** 2026-02-27
+**Project:** FirstApp v2.0 — Supabase User Management
+**Domain:** PHP cPanel app + Supabase REST API integration (subsequent milestone)
+**Researched:** 2026-02-28
 **Confidence:** HIGH
+
+---
 
 ## Executive Summary
 
-FirstApp is a two-sided dispatch-and-sign flow: an authenticated operator (Sharon) triggers an SMS containing a signing link, and a recipient opens that link on their mobile phone, draws a finger signature on a canvas, and the system saves the PNG and confirms receipt via a second SMS. This is a well-understood problem domain with mature, stable tooling. The recommended approach is a minimal PHP backend deployed directly on the existing cPanel shared host at ch-ah.info, using vanilla HTML/CSS/JS on the front end and the signature_pad library (szimek, v4.x) for canvas input. No framework, no database, no build pipeline — the simplicity of the toolchain is both appropriate to the scope and maximally educational.
+FirstApp v2.0 adds database-backed user management to an existing PHP signature dispatch app. The research is unanimous on approach: extend the existing PHP cURL pattern already used for the Micropay SMS gateway, applying it to Supabase's PostgREST REST API. No new libraries, no Composer, no framework — just the same `curl_init` / `curl_exec` pattern pointed at a different HTTPS endpoint. This is both the simplest and most robust path for a cPanel shared hosting environment where dependency management is restricted.
 
-The recommended architecture is a clean separation between static HTML/JS presentation files and PHP API endpoints housed in an `api/` subdirectory. All secrets (Micropay API token, credentials) live exclusively in `api/config.php` and never touch the browser. This boundary is the single most important architectural decision: violating it exposes the SMS API token to any visitor with DevTools open. PHP sessions handle authentication for the one protected endpoint (SMS dispatch). Signature files are saved as PNGs in a directory protected by `.htaccess`. The full end-to-end flow can be built in approximately six sequential components, each independently testable.
+The architecture decision with the most downstream impact is to use a custom `public.users` table in Supabase's PostgreSQL, storing bcrypt-hashed passwords via PHP's built-in `password_hash()`, rather than using Supabase GoTrue Auth. This choice keeps all auth logic in PHP sessions (identical to v1.0 behaviour), gives full SQL control over custom fields (id_number, foreign_worker, suspended_until), and eliminates the complexity of managing JWTs. The trade-off is that PHP owns password security — `password_hash()` with `PASSWORD_BCRYPT` is the required implementation, not optional polish.
 
-The dominant risks are not architectural — they are implementation traps specific to this stack. Three require immediate attention in Phase 1: the token must never appear in JavaScript, `session_start()` must be line 1 of every session-aware PHP file, and Hebrew SMS content must be converted from UTF-8 to ISO-8859-8 before URL-encoding. In Phase 2, the canvas has two well-known mobile pitfalls: touch events on iOS require explicit listeners and `preventDefault()` to stop page scroll, and HiDPI screens require `devicePixelRatio` scaling to avoid blurry saved signatures. Each of these is a predictable failure point with a one-line prevention — the research makes them explicit so they can be addressed on first build rather than discovered by debugging.
+The two highest risks in this milestone are both setup-phase issues that must be resolved before any other code is written: (1) the dual-header requirement for all Supabase calls — both `apikey` and `Authorization: Bearer` must be sent simultaneously, which differs from standard REST API conventions and causes a hard 401 if missed; and (2) the service_role key must never appear in any git-tracked file. Both risks are fully mitigated by building a single shared `api/supabase.php` cURL helper and adding `api/config.php` to `.gitignore` before the first commit. Once those two foundations are solid, all remaining work follows standard CRUD patterns with well-documented paths.
 
 ---
 
@@ -19,145 +21,187 @@ The dominant risks are not architectural — they are implementation traps speci
 
 ### Recommended Stack
 
-The stack is constrained by the hosting environment (cPanel shared hosting at ch-ah.info) and that constraint is a feature, not a limitation. PHP 8.2 is the only viable backend option on cPanel — Node.js persistent server processes are not supported. The only external library needed is `signature_pad` v4.x, loaded via CDN. All other capabilities (sessions, file I/O, HTTP calls) are built into PHP core.
+The v2.0 stack adds no new languages, frameworks, or build tools. All new capabilities are delivered via PHP cURL calls to Supabase's PostgREST REST API (`/rest/v1/`) for CRUD on the custom `public.users` table. The architecture research recommends skipping Supabase GoTrue Auth entirely and handling authentication through the custom table, reducing the number of API surfaces to one.
 
 **Core technologies:**
-- **PHP 8.2**: Backend logic, session auth, Micropay API calls, file writes — dictated by cPanel; no alternative exists
-- **HTML5 / CSS3 / Vanilla JS (ES6+)**: All presentation; no framework; no build step; `dir="rtl"` and `direction: rtl` handle Hebrew natively
-- **signature_pad 4.x (szimek)**: Touch-and-mouse canvas signature capture — the de facto standard; handles bezier interpolation, pointer events, and cross-browser quirks that raw Canvas API does not
-- **Apache .htaccess**: HTTPS redirect enforcement, directory listing suppression, signatures folder access control
-- **cPanel File Manager / FTP**: Deployment — appropriate for this scope; no CI/CD needed
 
-**Version note:** signature_pad 4.1.7 is confirmed in training data (Aug 2025). Verify current release at github.com/szimek/signature_pad/releases before pinning the CDN URL.
+- **PHP cURL (existing):** HTTP client for all Supabase calls — same pattern as the Micropay SMS integration, zero new dependencies.
+- **Supabase PostgREST v12 (hosted):** CRUD endpoint for the `public.users` table — GET, POST, PATCH, DELETE via URL query parameters and JSON body. Supabase manages upgrades automatically.
+- **PHP `password_hash()` / `password_verify()` (built-in):** bcrypt password hashing and login verification — PHP 5.5+ built-in, no library needed, constant-time safe by default.
+- **PHP `$_SESSION` (existing):** Session management for authenticated users — identical pattern to v1.0, no JWT handling required.
+- **Vanilla JS `fetch()` (existing):** AJAX calls from admin.php to PHP endpoints — same pattern as v1.0 dispatch UI.
+
+**Version requirements:** PHP 7.4+ (available on all cPanel hosts). Supabase free tier is sufficient (< 1000 users, < 500MB storage).
+
+**Explicitly rejected (with rationale):**
+
+- `phpsupabase` Composer library — unofficial, 2021 vintage, Composer uncertain on cPanel shared hosting; raw cURL is safer and more debuggable.
+- Supabase JS SDK — would expose service_role key to the browser; PHP-only server-side calls are required.
+- Supabase GoTrue Auth — adds JWT management, two separate API surfaces, and makes admin password-reset awkward; custom table approach is simpler for this use case.
+- Any CSS or JS framework — FTP deploy pattern requires no build step; vanilla JS and plain CSS handle the admin UI.
+- Argon2id password hashing — memory-intensive on shared hosting; bcrypt at cost 10-12 is the correct choice.
 
 ### Expected Features
 
-The entire app is the core loop. Every feature in the dependency chain is table stakes; nothing outside it is required for launch.
+The feature set is fully defined. The primary dependency that gates everything else: the Supabase schema must be created and verified in the Supabase dashboard before any PHP code is written, because column names dictate payload structure throughout all endpoints.
 
-**Must have (table stakes) — all 10 required for functional loop:**
-- Login / PHP session auth — protects paid SMS dispatch endpoint
-- Dispatch trigger button — sends Micropay SMS with signing link
-- SMS with unique-enough link — delivers sign.html URL to recipient
-- Mobile signature canvas — touch/finger drawing; core recipient UX
-- Clear / redo button — essential for usable signature input
-- Submit and save PNG — base64 canvas export to PHP file_put_contents
-- Confirmation to recipient — "thank you" UI state after successful save
-- Confirmation SMS to sender — second Micropay call on successful save
-- Visible error handling — failed saves or failed SMS must surface in UI, not silently drop
-- Logout — session_destroy link
+**Must have (table stakes — v2.0 core, all blocking):**
 
-**Should have (recommended stretch goals, in priority order):**
-1. Signature preview before submit — low effort, major UX improvement; teaches JS state management
-2. Timestamp in saved filename — teaches PHP date(), zero complexity
-3. Unique token per dispatch — teaches security thinking; prevents link reuse
+- Supabase `public.users` table — schema with all fields including `status` enum and `suspended_until`
+- User list table — HTML table rendered via JS fetch to `api/users/list.php`, columns: name, ID, phone, status, actions
+- Create user form — all 8 fields, email validation (JS + PHP `filter_var`), password minimum 8 chars
+- Edit user — pre-populated modal, saves changes to Supabase via PATCH
+- Delete user — with `confirm()` prompt before destructive action
+- Block user — sets `status = 'blocked'`, permanent, no expiry logic needed
+- Suspend user with end date — sets `status = 'suspended'` plus `suspended_until` timestamp
+- Client-side search on user table — JS filter on rendered rows, no server round-trip
+- Login with Supabase credentials — PHP fetches user by email, calls `password_verify()`, checks status before setting session
+- Hebrew labels and RTL layout throughout
 
-**Defer to v2+:**
-- Sender views PNGs in browser (flat file list page)
-- Signing link expiry
-- Dispatch log file (CSV)
+**Three-state user status model (confirmed canonical pattern, used by Google Workspace and Atlassian):**
 
-**Never build (anti-features):**
-- Database (MySQL), user registration, password reset, PDF overlay, PKI/legal signing, email notifications, multi-recipient dispatch, real-time status, admin dashboard, native mobile app — all increase complexity with zero learning-project benefit. See FEATURES.md for full rationale.
+| Status | Login allowed | Clears automatically |
+|--------|---------------|----------------------|
+| active | Yes | No |
+| blocked | No | No — admin must manually unblock |
+| suspended | No (while `today < suspended_until`) | Not auto — login check reads the date passively |
+
+**Should have (v2.x polish, add after core works):**
+
+- Show/hide password toggle — 2 lines of JS, eliminates real pain point during user creation
+- Password generator button — JS string manipulation, directly useful for admin workflow
+- Toast/snackbar feedback instead of `alert()` — better UX, teaches JS event timing
+- Filter table by status — useful for fleet manager reviewing suspended workers
+
+**Defer to v3.0+:**
+
+- Admin page authentication — wrap admin.php in session check, same pattern as dispatch.php
+- Sort table columns by clicking header
+- Pagination — only needed when user list exceeds 50+ rows
+
+**Explicit anti-features (do not build in v2.0):** RBAC, CSV bulk import, email notifications, password reset flow, audit log, real-time updates, soft delete with restore, forgot-password flow. Each is excluded with clear rationale — all add a sub-system worth of complexity for no learning benefit at this scale.
 
 ### Architecture Approach
 
-The architecture follows the "Thin PHP API" pattern: static HTML/CSS/JS files handle all presentation, and PHP files in `api/` handle all server-side work. The files are separated by type, not by page. This makes the security boundary physically obvious — anything in `api/` touches secrets; anything outside it does not. There are exactly three PHP endpoints, one config include, three HTML pages, one CSS file, one JS file, and one protected folder.
+The architecture is a thin extension of the v1.0 pattern. Browser calls PHP via `fetch()`. PHP calls Supabase via cURL. Supabase returns JSON. PHP validates, transforms, and returns JSON to the browser. No new layers, no new abstractions. All Supabase API calls are centralized through a single `api/supabase.php` helper that encodes the dual-header requirement exactly once — every endpoint file includes this helper rather than constructing headers independently.
 
-**Major components:**
-1. **`index.html` + `api/login.php`** — Login form UI and session creation; the auth gateway for the entire app
-2. **`dashboard.html` + `api/send-sms.php`** — Operator dispatch UI; session-protected; all Micropay calls happen here
-3. **`sign.html` + `api/save-signature.php`** — Public recipient page; canvas capture, PNG save, confirmation SMS
-4. **`api/config.php`** — Single source of truth for all constants and credentials; included by PHP endpoints, never served to browser
-5. **`signatures/`** — File store for saved PNGs; protected by `.htaccess` `Deny from all`
+**Major components (6 new files, 3 modified):**
+
+1. **`api/supabase.php` (NEW):** Reusable cURL helper — `supabase_request(method, path, body, extra_headers)`. Single source of truth for authentication headers, timeout, error handling, and JSON decode. All other PHP endpoint files call this function; none construct raw cURL directly.
+2. **`api/users/*.php` (NEW — 4 files):** Endpoint files for list, create, update, delete. Each validates input, hashes passwords where needed, calls `supabase_request()`, and returns JSON to the browser.
+3. **`admin.php` (NEW):** PHP page serving the user management UI. HTML table populated via JS `fetch()` calls to `api/users/` endpoints. No server-side rendering of the table — data-driven via JS for simpler CRUD interactions.
+4. **`api/login.php` (MODIFIED):** Replaces 2-line hardcoded credential check with: GET user from Supabase by email → status check → `password_verify()` → session set. This is the highest-risk change and is built last.
+5. **`api/config.php` (MODIFIED):** Adds `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` constants. Removes `ADMIN_USER` and `ADMIN_PASS` constants. Must be in `.gitignore` before the first commit.
+6. **`Supabase Cloud` (EXTERNAL):** PostgreSQL via PostgREST. Single `public.users` table. RLS disabled (service_role key bypasses it regardless; disabling makes intent explicit and avoids Pitfall S4).
+
+**Unchanged files:** `dashboard.html`, `sign.html`, `api/send-sms.php`, `api/save-signature.php`, `api/check-session.php`. The v1.0 core flow is untouched.
+
+**Three architectural patterns to follow without exception:**
+
+- All Supabase calls go through PHP — never from browser JS (service_role key security)
+- One cURL helper, many callers (DRY — single point for header and credential changes)
+- PHP owns password lifecycle — `password_hash()` on write, `password_verify()` on login, never store plaintext
 
 ### Critical Pitfalls
 
-Eight critical pitfalls were identified, all HIGH confidence. The top five that must be prevented before going live:
+**v2.0 specific — Supabase + PHP integration:**
 
-1. **Micropay token in client JS** — Token must live only in `api/config.php`. The browser button POSTs to a PHP endpoint; PHP calls Micropay. Verify by opening DevTools and searching for the token string — it must never appear. This is the most dangerous pitfall.
-2. **`session_start()` missing or placed after output** — Must be line 1 of every PHP file that reads or writes `$_SESSION`. Forgetting it causes silent auth failures. Enable `display_errors = 1` during development to surface "headers already sent" warnings immediately.
-3. **Canvas broken on iOS (touch events)** — The app's primary use case is mobile. Raw canvas mouse listeners do not fire on iPhone. Must register `touchstart`, `touchmove`, `touchend` listeners and call `e.preventDefault()` on touchmove. Test on a real phone before calling Phase 2 done.
-4. **Saved PNG is blank white** — Canvas background is transparent by default. Fill white before any drawing. Strip the `data:image/png;base64,` prefix before `base64_decode()` in PHP. Verify `file_put_contents()` returns a non-zero byte count before sending confirmation SMS.
-5. **Hebrew SMS garbled** — Micropay expects ISO-8859-8 encoding. Always convert: `iconv('UTF-8', 'ISO-8859-8', $msg)` then `urlencode()`. Keep messages under 70 characters (Hebrew SMS uses UCS-2; 70 char limit per segment). Test on a real phone.
+1. **Missing `apikey` header (Pitfall S1)** — Supabase PostgREST requires both `apikey: KEY` and `Authorization: Bearer KEY` simultaneously. Standard REST convention only uses Authorization. Missing `apikey` returns HTTP 401 with "No API key found in request." Prevention: centralize both headers in `api/supabase.php` so they cannot be omitted from any call.
 
-Additional critical pitfalls (full detail in PITFALLS.md): PHP error display off on shared hosting (enable `display_errors` day one), `signatures/` directory publicly accessible without `.htaccess`, hidden input missing `name` attribute causing `$_POST` to be empty.
+2. **PATCH/DELETE without row filter = table-wide operation (Pitfall S3)** — Sending `PATCH /rest/v1/users` without `?id=eq.{uuid}` updates every row in the table. PostgREST applies bulk operations by design with no warning. Prevention: validate `$id` is non-empty before constructing every PATCH or DELETE URL; add an assertion `if (empty($id)) { die('User ID required'); }` at the top of update.php and delete.php.
+
+3. **service_role key committed to GitHub (Pitfall S6)** — The service_role key bypasses all Row Level Security. If committed to the public `ChemoIT/FirstApp` repo, any internet user has unrestricted database access. Prevention: add `api/config.php` to `.gitignore` before the first commit and verify with `git status`. If already committed, rotate the key immediately in Supabase Dashboard → Settings → API.
+
+4. **Plaintext passwords stored in Supabase (Pitfall S5)** — The custom table approach means PHP is responsible for hashing. Storing `$_POST['password']` directly inserts the real password in plaintext. Prevention: always `password_hash($password, PASSWORD_BCRYPT)` before any Supabase write; name the column `password_hash` not `password` as a built-in reminder.
+
+5. **PATCH returns HTTP 200 but no rows updated (Pitfall S8)** — Caused by double-encoded JSON body (`json_encode` called on a string instead of an array) or missing `Content-Type: application/json` header. Prevention: always `json_encode(array)`, always include Content-Type, use `Prefer: return=representation` to verify the updated row appears in the response.
+
+**Carry-forward from v1.0 (still active in v2.0 work):**
+
+6. **PHP error display off on shared hosting (Pitfall 7)** — cPanel has `display_errors = Off` by default. Add `error_reporting(E_ALL); ini_set('display_errors', 1);` at the top of all new PHP files during development. Remove before deploy.
+
+7. **SSL verification disabled (Pitfall S7)** — Never set `CURLOPT_SSL_VERIFYPEER = false`. If cPanel's CA bundle is outdated, download `cacert.pem` from curl.se and reference it explicitly via `CURLOPT_CAINFO`. The false flag is widely found in Stack Overflow answers and creates a man-in-the-middle vulnerability.
 
 ---
 
 ## Implications for Roadmap
 
-The architecture's build order is deterministic. Components have clear dependencies and each phase produces a testable system. Two phases are recommended.
+V2.0 implementation has a deterministic dependency order driven by hard technical constraints. The build sequence below is not a stylistic preference — it reflects what must exist before the next thing can be built or tested.
 
-### Phase 1: Foundation — Auth, Security, and SMS Dispatch
+### Phase 1: Foundation — Schema and Connection
 
-**Rationale:** The security skeleton must be established first. The Micropay token exposure risk and the HTTPS enforcement both need to be correct from day one — retrofitting security after the fact on a shared host is harder than building it in. Login is the prerequisite for everything protected. SMS dispatch is the first half of the core loop and validates the Micropay integration before the canvas is touched.
+**Rationale:** Nothing else can be built until the database table exists and PHP can read from it with verified credentials. This phase has zero risk to existing v1.0 functionality because no existing files are modified. The cURL helper built here becomes the dependency for all subsequent phases.
 
-**Delivers:** Working login/logout, protected dispatch page, SMS arrival on target phone with a link, HTTPS enforced, all secrets isolated in config.php.
+**Delivers:** Supabase project configured with `public.users` table (verified in dashboard), `api/config.php` updated with credentials (and confirmed in `.gitignore`), `api/supabase.php` cURL helper implemented and tested with a GET call returning an empty array `[]`.
 
-**Addresses features:** Login/auth, logout, dispatch trigger button, SMS with link.
+**Addresses:** All "schema must exist first" dependencies from FEATURES.md; column name and type decisions (status enum, `suspended_until`, `password_hash` column name established from the start).
 
-**Avoids:** Pitfall 1 (token in JS), Pitfall 2 (session_start), Pitfall 5 (Hebrew SMS encoding), Pitfall 7 (error display off), Pitfall 10 (session fixation), Pitfall 11 (HTTPS not enforced), Pitfall 16 (include path with __DIR__).
+**Avoids:** Pitfall S1 (dual headers centralized in helper), Pitfall S5 (column named `password_hash` from day one), Pitfall S6 (config.php in .gitignore before first commit), Pitfall S4 (RLS explicitly disabled so service_role key behaves predictably).
 
-**Build sequence within phase:**
-1. Folder structure + `api/config.php` + both `.htaccess` files (security skeleton)
-2. `index.html` + `api/login.php` (session auth)
-3. `dashboard.html` + session guard (protected shell)
-4. `api/send-sms.php` (Micropay integration + Hebrew encoding)
-
-**Research flag:** No additional research needed. PHP session auth and Micropay GET calls are standard patterns with well-documented behavior.
+**Research flag:** Standard patterns — no additional research needed. PostgREST setup and required headers are fully documented in official Supabase docs. Confidence HIGH.
 
 ---
 
-### Phase 2: Signature Capture, Storage, and Confirmation
+### Phase 2: Admin CRUD — Read and Create
 
-**Rationale:** Phase 2 builds the recipient-side flow. All the mobile/canvas pitfalls are concentrated here. Building this after Phase 1 is validated means the full end-to-end test is possible at Phase 2 completion. The canvas work requires touch event handling and HiDPI scaling to be correct; these are not optional polish — they are required for the app to function on an iPhone.
+**Rationale:** Build the two safest endpoints first — `list.php` (read-only, no side effects) then `create.php` (additive only, no deletion risk). Scaffold the admin UI only after both API endpoints are verified. This validates the entire data flow before any destructive operations are introduced.
 
-**Delivers:** Working mobile signature canvas (touch + mouse), PNG saved to server with timestamp in filename, confirmation SMS to operator, full end-to-end flow tested on a real phone, `signatures/` protected by .htaccess.
+**Delivers:** `api/users/list.php`, `api/users/create.php`, and `admin.php` HTML page with working user table and create form. Admin can add the first real user and see it in the table. First user verified in Supabase dashboard. Password is confirmed to be stored as a bcrypt hash (not plaintext).
 
-**Addresses features:** Mobile signature canvas, clear button, submit/save PNG, confirmation to recipient, confirmation SMS to sender, visible error handling.
+**Uses:** `api/supabase.php` helper from Phase 1; `password_hash()` on create; `Prefer: return=representation` header on POST to get the created row back including auto-generated UUID.
 
-**Avoids:** Pitfall 3 (canvas blank on iOS), Pitfall 4 (blank PNG saved), Pitfall 6 (signatures/ publicly accessible), Pitfall 8 (hidden input missing name), Pitfall 9 (HiDPI blurry signature), Pitfall 13 (toDataURL called on empty canvas), Pitfall 15 (file permissions 644).
+**Addresses:** User list table, create user form, email validation, password minimum 8 chars, Hebrew RTL layout, password generator button.
 
-**Stack elements:** signature_pad 4.x via CDN, HTML5 Canvas API, `devicePixelRatio` scaling, PHP `base64_decode` + `file_put_contents`, second Micropay call.
+**Avoids:** Pitfall S5 (bcrypt established on first create), Pitfall S8 (correct `json_encode(array)` pattern validated here), Pitfall S7 (SSL verification verified before any other calls).
 
-**Build sequence within phase:**
-1. `sign.html` with canvas + signature_pad + touch listeners (no save yet)
-2. `api/save-signature.php` (base64 decode, PNG write, confirmation SMS)
-3. End-to-end test: login → send SMS → open link on phone → sign → confirm SMS
-
-**Research flag:** No additional research needed. Canvas touch events and base64-to-PNG are well-documented patterns. The signature_pad library handles the complex bits.
+**Research flag:** Standard patterns — PHP POST to REST API with form validation is well-documented. No additional research needed.
 
 ---
 
-### Phase 3 (Optional): Polish and Security Hardening
+### Phase 3: Admin CRUD — Update, Delete, Block, Suspend
 
-**Rationale:** Once the core loop is proven, these additions each teach a specific concept without risking the working system. All are independent additions — none break the existing flow.
+**Rationale:** Mutating and destructive operations are built after read/create is working and at least one real user exists in the table to test against. Block and suspend are PATCH operations on the `status` field — same endpoint as update, different payload. Grouping them here keeps all write operations in one verifiable phase.
 
-**Delivers:** Signature preview before submit, unique token per dispatch (replay prevention), timestamp in saved filenames, dispatch log (flat CSV), sender can view PNGs in browser.
+**Delivers:** `api/users/update.php`, `api/users/delete.php`, full admin UI with edit modal, delete confirmation prompt, block button, and suspend-with-date-picker. All status transitions tested end-to-end including the unblock action (PATCH status back to 'active').
 
-**Addresses features:** Stretch goals from FEATURES.md (signature preview, unique token, timestamp filename, log file, sender views PNG).
+**Implements:** Three-state status model in its full form. Both setting and clearing `suspended_until`. Block vs. suspend distinction verified at the database level.
 
-**Avoids:** Pitfall 12 (non-unique signing link) — addressed by unique token feature.
+**Avoids:** Pitfall S3 (PATCH/DELETE require non-empty id filter — enforced with assertions at the top of both endpoint files), Pitfall S8 (PATCH body encoding and Content-Type header verified by checking response body contains updated row).
 
-**Research flag:** No additional research needed. All patterns are standard PHP/JS.
+**Research flag:** Standard patterns — PostgREST PATCH/DELETE are fully documented. The only subtlety (filter required) is covered in PITFALLS.md. No additional research needed.
+
+---
+
+### Phase 4: Login Replacement
+
+**Rationale:** This is the highest-risk change — it modifies the authentication path that all existing v1.0 functionality depends on. It is built last, after at least one user with a known password exists in Supabase (created in Phase 2). A rollback path exists: temporarily re-add `ADMIN_USER`/`ADMIN_PASS` constants to `config.php` and revert `login.php` to the v1.0 credential check.
+
+**Delivers:** `api/login.php` modified to query Supabase by email, check status (blocked/suspended/active), call `password_verify()`, and set the PHP session. `index.html` minor update changing "שם משתמש" label to "אימייל" and updating the field name in the fetch body. Full end-to-end test: create user in admin → login with that user → send SMS → sign → receive confirmation SMS.
+
+**Implements:** Status enforcement on login — blocked users denied always; suspended users denied while `today < suspended_until`; active users proceed to session set. Generic "Invalid credentials" error message for both wrong email and wrong password (prevents user enumeration).
+
+**Avoids:** Pitfall S4 (service_role key confirmed working from Phase 1, no RLS surprises), all v1.0 pitfalls preserved (Micropay token isolation, session security, Hebrew SMS encoding — unchanged files).
+
+**Research flag:** Low complexity — the login flow is completely specified in ARCHITECTURE.md with exact code including Hebrew error messages. No additional research needed.
 
 ---
 
 ### Phase Ordering Rationale
 
-- Security foundation comes first because the Micropay token risk is the highest-consequence mistake and it must be wired correctly from the start. Building the dispatch flow before the canvas means the SMS integration is validated before the more complex mobile work begins.
-- The signing flow is Phase 2 because it depends on having a real URL to send in the SMS. Building it second also allows both halves to be tested together immediately upon Phase 2 completion.
-- The stretch goals are isolated to Phase 3 because every item there is an independent enhancement layered on a working system. Adding them earlier adds risk to the core loop without proportionate benefit.
-- The architecture's clean `api/` separation is set up in Phase 1, Step 1 — this means the pattern is established before any feature code is written and cannot be accidentally violated by a beginner.
+- **Schema-first is non-negotiable:** PHP payloads mirror column names and types. Changing a column name after endpoints are written requires updating every endpoint file. Design the schema completely in Phase 1 before any PHP is written.
+- **The cURL helper must precede all endpoint files:** It is the single source of truth for the dual-header requirement (Pitfall S1). Every endpoint built without the helper risks silently omitting `apikey`.
+- **Login replacement is last for two reasons:** (1) It modifies the live authentication path that all users depend on; (2) It requires a real Supabase user with a known password to test against — that user only exists after Phase 2 completes.
+- **Admin CRUD is split across Phases 2 and 3:** Read/create (additive, low risk) before update/delete/block/suspend (mutating/destructive). This allows each group to be verified in isolation before introducing operations that can destroy data.
 
 ### Research Flags
 
-Phases with well-established patterns (no `gsd:research-phase` needed):
-- **Phase 1:** PHP sessions, cPanel HTTPS, Micropay GET API — all standard, all well-documented, all covered in research.
-- **Phase 2:** HTML5 Canvas, touch events, base64-PNG, signature_pad — mature browser APIs; signature_pad README is sufficient reference.
-- **Phase 3:** All patterns are PHP/JS fundamentals.
+All four phases have HIGH-confidence documentation. No phases require `/gsd:research-phase`.
 
-No phase in this project requires a `gsd:research-phase` call. The research is complete. The one action item before writing code is to verify the current signature_pad version at the GitHub releases page and pin the CDN URL accordingly.
+Phases with standard, well-documented patterns (skip additional research):
+- **Phase 1:** Supabase project setup, PostgREST connection, dual-header requirement — verified in official Supabase docs.
+- **Phase 2:** Admin read and create CRUD — standard REST POST pattern; PHP validation and `password_hash` are PHP manual standards.
+- **Phase 3:** Admin update, delete, and status management — PostgREST PATCH/DELETE with filter parameters fully documented.
+- **Phase 4:** Login flow replacement — completely specified in ARCHITECTURE.md with exact PHP code; no unknowns.
 
 ---
 
@@ -165,37 +209,51 @@ No phase in this project requires a `gsd:research-phase` call. The research is c
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH (PHP, sessions, file I/O) / MEDIUM (signature_pad version) | PHP is dictated by hosting; session/file patterns are core PHP. signature_pad version 4.1.7 is training data (Aug 2025) — verify at GitHub before use. |
-| Features | HIGH | Feature set defined by PROJECT.md; domain is mature; table stakes are unambiguous. |
-| Architecture | HIGH | PHP/cPanel thin-API pattern is established and stable; component boundaries are clear; all sources are official. |
-| Pitfalls | HIGH | All 8 critical pitfalls are based on well-established PHP/browser/hosting fundamentals with official source backing. No speculation. |
+| Stack | HIGH | PostgREST endpoints, required headers, and PHP cURL integration verified via official Supabase docs and PHP manual. The decision to reject phpsupabase and GoTrue Auth is MEDIUM — based on assessed risk rather than direct testing of the rejected alternatives. |
+| Features | HIGH | Admin CRUD is a 20-year-old solved problem. Three-state status model verified against Google Workspace and Atlassian patterns. Feature ordering is deterministically driven by schema dependencies with no ambiguity. |
+| Architecture | HIGH | Component boundaries, data flows, file structure, and build order are fully specified with exact code in ARCHITECTURE.md. Custom-table-over-GoTrue decision has explicit trade-off analysis. RLS behaviour with service_role confirmed via community discussion in addition to official docs. |
+| Pitfalls | MEDIUM-HIGH | v1.0 pitfalls (PHP/cPanel) are HIGH — established patterns. v2.0 Supabase pitfalls are MEDIUM-HIGH — core issues (dual header, key exposure, filter required) verified via official docs and confirmed community discussions. The PATCH silent-failure mechanism verified via a widely-referenced Supabase issue thread. |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **signature_pad current version:** Training data cites 4.1.7 (Aug 2025 cutoff). Before pinning the CDN URL, check https://github.com/szimek/signature_pad/releases for the current v4.x release. This is a one-minute verification, not a research gap.
-- **Micropay API encoding confirmation:** The ISO-8859-8 requirement is stated in the project spec. If the API has changed or if UTF-8 is now accepted, the `iconv` call is still harmless but unnecessary. Test with a real SMS on first deploy to confirm.
-- **cPanel PHP Selector options:** Research recommends PHP 8.2. The actual available versions depend on the specific cPanel install at ch-ah.info. Check cPanel → MultiPHP Manager before starting Phase 1. PHP 8.x (any minor) is acceptable.
+- **bcrypt cost factor discrepancy:** STACK.md recommends `PASSWORD_DEFAULT` (bcrypt cost 10); ARCHITECTURE.md uses `PASSWORD_BCRYPT` (cost 12, the PHP 8.4 new default). During Phase 1 setup, confirm the cPanel PHP version. Use `PASSWORD_DEFAULT` for maximum forward compatibility — PHP manages the cost factor automatically on future upgrades.
+
+- **cPanel PHP version:** Research assumes PHP 7.4+. Verify the actual PHP version via cPanel → Select PHP Version before writing any code. Both 7.4 and 8.x are fully supported; the difference only affects the default bcrypt cost.
+
+- **`ban_duration` GoTrue mechanism:** Researched but not used in the final architecture (custom table chosen instead of GoTrue Auth). No action needed — this gap is moot for v2.0.
+
+- **Supabase free tier limits:** Free tier provides 500MB storage and unlimited API calls. Sufficient for < 1000 users. No action required unless the project grows beyond expected scale.
 
 ---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `PROJECT.md` — project scope, constraints, Micropay API method (GET, ISO-8859-8, token), phone number, credentials
-- PHP official documentation: https://www.php.net/manual/en/book.session.php, https://www.php.net/manual/en/function.file-put-contents.php, https://www.php.net/manual/en/function.iconv.php
-- MDN Web Docs: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API, https://developer.mozilla.org/en-US/docs/Web/API/Touch_events, https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio, https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toDataURL
-- Apache .htaccess access control: standard Apache mod_rewrite / mod_authz_host documentation
+
+- Supabase REST API docs: https://supabase.com/docs/guides/api — base URLs, CRUD methods, filter syntax
+- Supabase API Keys docs: https://supabase.com/docs/guides/api/api-keys — dual header requirement (apikey + Authorization Bearer)
+- Supabase GoTrue self-hosting auth API: https://supabase.com/docs/reference/self-hosting-auth/introduction — admin endpoint patterns (assessed and rejected for this project)
+- Supabase auth architecture: https://supabase.com/docs/guides/auth/architecture — GoTrue vs PostgREST separation (informed custom table decision)
+- PostgREST v12 Prefer header: https://docs.postgrest.org/en/v12/references/api/preferences.html — `return=representation`
+- PHP `password_hash` docs: https://www.php.net/manual/en/function.password-hash.php — bcrypt, PASSWORD_DEFAULT
+- PROJECT.md — project scope, constraints, field list, and explicit decisions (no admin auth, custom table preferred)
 
 ### Secondary (MEDIUM confidence)
-- signature_pad GitHub (training data Aug 2025): https://github.com/szimek/signature_pad — version 4.1.7 cited; verify current release
-- cPanel PHP MultiPHP Manager: training data — verify available PHP versions at ch-ah.info cPanel
 
-### Tertiary (LOW confidence)
-- None. No findings in this research are based on single or unverified sources.
+- PHP Watch bcrypt cost: https://php.watch/versions/8.4/password_hash-bcrypt-cost-increase — PHP 8.4 default cost change to 12
+- PostgREST dual-header confirmation: https://github.com/supabase-community/postgrest-go/issues/29 — community thread confirming both headers required (matches official docs)
+- Google Workspace user status model: https://knowledge.workspace.google.com/admin/users/view-the-status-of-a-user-account — active/suspended pattern validation
+- Supabase admin API (JS reference, used to infer HTTP layer): https://supabase.com/docs/reference/javascript/admin-api
+
+### Tertiary (feature UX conventions)
+
+- Refine admin panel guide: https://refine.dev/blog/what-is-an-admin-panel/ — admin panel feature taxonomy
+- Authgear login UX guide: https://www.authgear.com/post/login-signup-ux-guide — validation and error messaging conventions
+- phpsupabase GitHub: https://github.com/rafaelwendel/phpsupabase — assessed and rejected (Composer-only, unofficial, 2021 vintage)
 
 ---
 
-*Research completed: 2026-02-27*
+*Research completed: 2026-02-28*
 *Ready for roadmap: yes*
