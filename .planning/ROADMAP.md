@@ -39,10 +39,10 @@
 2. `api/config.php` holds the Project URL and service_role key and does NOT appear in `git status` (confirmed by .gitignore)
 3. A test GET request via `api/supabase.php` returns an empty JSON array `[]` — proving the dual-header connection works
 
-**Plans:** TBD
+**Plans:** 1 plan
 
 Plans:
-- [ ] 03-01: Create Supabase schema and configure credentials
+- [ ] 03-01-PLAN.md — Create Supabase schema, credentials, and PHP cURL helper
 
 ---
 
