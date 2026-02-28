@@ -1,0 +1,9 @@
+# Server credentials — never commit
+api/config.php
+
+# OS / Editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/settings.json
+*.swp
