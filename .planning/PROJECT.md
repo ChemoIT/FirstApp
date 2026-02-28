@@ -26,16 +26,33 @@ A user can dispatch a signature request via SMS and receive a signed document ba
 
 ### Active
 
-(None — next milestone will define new requirements)
+<!-- v2.0 — User Management with Supabase -->
+- [ ] Supabase PostgreSQL integration via PHP cURL (REST API)
+- [ ] Admin page for user CRUD (create, read, update, delete)
+- [ ] User fields: first name, last name, ID number, phone, gender, foreign worker, email, password
+- [ ] User table view with search, edit, delete, block, suspend-until-date
+- [ ] Login page using email+password from Supabase (replaces hardcoded sharonb)
+- [ ] Password generator and minimum 8-char validation
+- [ ] Email format validation
 
 ### Out of Scope
 
-- Password reset / forgot password — single hardcoded user
 - Document management — only signature capture, no document upload
 - Email notifications — SMS only via Micropay
 - Multi-language — Hebrew interface only
 - Digital certificates / PKI — commercial e-signing feature, overkill
 - Audit trail — commercial compliance feature
+
+## Current Milestone: v2.0 User Management
+
+**Goal:** Add Supabase-backed user management — admin page for CRUD, login with email+password from DB, replacing hardcoded credentials.
+
+**Target features:**
+- Admin page (`admin.php`) — no login required, full user CRUD
+- Supabase PostgreSQL via PHP cURL REST API
+- User fields: name, ID, phone, gender, foreign worker, email (username), password (8+ chars, generator)
+- User table with search, edit, delete, block, suspend-until-date
+- New login flow: email+password from Supabase replaces sharonb
 
 ## Context
 
@@ -46,6 +63,8 @@ A user can dispatch a signature request via SMS and receive a signed document ba
 - **GitHub** — github.com/ChemoIT/FirstApp.git
 - **Target phone** — 0526804680 for SMS dispatch
 - **Hebrew UI** — All user-facing text in Hebrew, RTL layout
+- **Supabase** — Cloud PostgreSQL, REST API, Project URL + anon key + service_role key provided by Sharon
+- **Architecture** — PHP (cURL) → Supabase REST API → PostgreSQL. Service role key server-side only
 
 ## Constraints
 
@@ -53,7 +72,9 @@ A user can dispatch a signature request via SMS and receive a signed document ba
 - **Hosting**: cPanel shared hosting (PHP available, no Node.js server) — dictates PHP backend
 - **SMS API**: Micropay (GET method, iso-8859-8 charset) — 70 char limit for Hebrew messages
 - **Security**: SMS token must be server-side only (PHP) — never exposed in client JavaScript
+- **Security**: Supabase service_role key must be server-side only (PHP) — never exposed in client JavaScript
 - **Signature storage**: Local file system on server (ch-ah.info/FirstApp/signatures/)
+- **Database**: Supabase cloud PostgreSQL — accessed via REST API from PHP, no direct DB connection from cPanel
 
 ## Key Decisions
 
@@ -70,5 +91,10 @@ A user can dispatch a signature request via SMS and receive a signed document ba
 | No closing ?> in PHP | Prevents trailing whitespace causing "headers already sent" errors | Good |
 | DPI-aware canvas resize | devicePixelRatio scaling + signaturePad.clear() prevents isEmpty() false positive | Good |
 
+| Supabase for user DB | Cloud PostgreSQL with REST API — no direct DB driver on cPanel shared hosting | — Pending |
+| PHP cURL for Supabase | Matches existing stack (v1.0 uses cURL for Micropay) — no new dependencies | — Pending |
+| Email as username | Simple, unique, familiar — no separate username field needed | — Pending |
+| Admin page without auth | Learning project — acceptable trade-off for simplicity | — Pending |
+
 ---
-*Last updated: 2026-02-28 after v1.0 milestone*
+*Last updated: 2026-02-28 after v2.0 milestone start*

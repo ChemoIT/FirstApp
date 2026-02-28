@@ -5,13 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** A user can dispatch a signature request via SMS and receive a signed document back — the full send-sign-confirm loop must work end to end.
-**Current focus:** v1.0 shipped. Ready for next milestone.
+**Current focus:** v2.0 — User Management with Supabase
 
 ## Current Position
 
-Milestone: v1.0 SHIPPED (2026-02-28)
-Status: All phases complete, verified, archived.
-Last activity: 2026-02-28 — v1.0 milestone archived.
+Milestone: v2.0 User Management
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-28 — Milestone v2.0 started
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -24,7 +28,7 @@ Last activity: 2026-02-28 — v1.0 milestone archived.
 
 ### Decisions
 
-All decisions logged in PROJECT.md Key Decisions table.
+All v1.0 decisions logged in PROJECT.md Key Decisions table.
 
 ### Pending Todos
 
@@ -32,10 +36,11 @@ None.
 
 ### Blockers/Concerns
 
-None — v1.0 shipped clean.
+- Sharon needs step-by-step guidance for Supabase setup (first time using it)
+- Supabase credentials (Project URL, anon key, service_role) — Sharon has them, will provide when needed
 
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: v1.0 milestone archived. Next: /gsd:new-milestone
+Stopped at: Milestone v2.0 started. Defining requirements.
 Resume file: None
