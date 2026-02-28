@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** A user can dispatch a signature request via SMS and receive a signed document back — the full send-sign-confirm loop must work end to end.
-**Current focus:** v2.0 Phase 5 — Admin Update, Delete, Block, Suspend
+**Current focus:** v2.0 Phase 6 — Login Replacement (next)
 
 ## Current Position
 
 Milestone: v2.0 User Management
-Phase: 5 of 6 (Admin Update, Delete, Block, Suspend) — IN PROGRESS
-Plan: Phase 05 Plan 02 — Task 1 complete (admin.php + list.php modified). Awaiting human verify (Task 2 checkpoint).
-Status: admin.php has action buttons, edit modal, suspend modal, event delegation, escHtml(). list.php returns suspended_until. Pending: human verification at https://ch-ah.info/FirstApp/admin.php
-Last activity: 2026-02-28 — Phase 05-02 Task 1 committed (b847fd7); checkpoint reached for Task 2
+Phase: 5 of 6 (Admin Update, Delete, Block, Suspend) — COMPLETE
+Plan: Phase 05 fully complete — both plans (05-01 API endpoints, 05-02 admin UI) verified in production
+Status: All 4 admin actions (edit, delete, block, suspend) working end-to-end. Human checkpoint passed (8 points).
+Last activity: 2026-02-28 — Phase 05 complete; admin.php full CRUD verified at ch-ah.info
 
-Progress: [██████░░░░] 70% (v1.0 complete; v2.0 phases 3-5 in progress, phase 6 pending)
+Progress: [████████░░] 80% (v1.0 complete; v2.0 phases 3-5 done, phase 6 pending)
 
 ## Performance Metrics
 
@@ -88,5 +88,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Phase 05 Plan 02 Task 1 complete — admin.php + list.php modified (b847fd7). Checkpoint: awaiting human verify at https://ch-ah.info/FirstApp/admin.php (Task 2)
+Stopped at: Phase 05 complete — all admin CRUD operations verified in production; next is Phase 06 (login replacement)
 Resume file: None
