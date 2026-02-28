@@ -11,9 +11,9 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 Milestone: v2.0 User Management
 Phase: 3 of 6 (Database Foundation)
-Plan: — (ready to plan)
-Status: Ready to plan
-Last activity: 2026-02-28 — Roadmap created for v2.0 (phases 3-6)
+Plan: 01 (in progress — paused at checkpoint)
+Status: Awaiting human action
+Last activity: 2026-02-28 — Phase 3 Plan 01 Task 1 complete; paused at Task 2 (human-action checkpoint)
 
 Progress: [██░░░░░░░░] 33% (v1.0 complete; v2.0 not started)
 
@@ -46,12 +46,11 @@ None.
 
 ### Blockers/Concerns
 
-- Sharon needs step-by-step guidance for Supabase setup (first time using it) — Phase 3 plan will include this
-- Supabase credentials (Project URL, anon key, service_role key) — Sharon has them, provide during Phase 3 execution
-- Verify cPanel PHP version before Phase 3 starts (must be 7.4+ for `password_hash` constant compatibility)
+- ACTIVE: Awaiting Sharon to (1) create `public.users` table in Supabase SQL Editor and (2) paste Project URL + service_role key into `api/config.php`
+- Verify cPanel PHP version before Phase 3 completes (must be 7.4+ for `password_hash` constant compatibility)
 
 ## Session Continuity
 
-Last session: 2026-02-28
-Stopped at: v2.0 roadmap created. Phase 3 ready to plan.
+Last session: 2026-02-28T16:38:38Z
+Stopped at: Phase 03-01 Task 2 — checkpoint:human-action (Supabase table creation + credentials)
 Resume file: None
