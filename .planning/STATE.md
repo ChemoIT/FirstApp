@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Milestone: v2.0 User Management
-Phase: 3 of 6 (Database Foundation) — COMPLETE
-Plan: —
-Status: Phase 3 complete, verified. Ready to plan Phase 4.
-Last activity: 2026-02-28 — Phase 3 complete; verification passed 3/3 must-haves
+Phase: 4 of 6 (Admin Read and Create) — IN PROGRESS
+Plan: 04-01 complete, 04-02 pending
+Status: Phase 4 Plan 01 (API endpoints) complete. Ready for Plan 02 (admin.php UI).
+Last activity: 2026-02-28 — Phase 04-01 complete; api/users/list.php and api/users/create.php created and committed
 
-Progress: [███░░░░░░░] 42% (v1.0 complete; v2.0 phase 3 done, 3 phases remaining)
+Progress: [████░░░░░░] 50% (v1.0 complete; v2.0 phases 3-4 in progress, phase 4 plan 01 done)
 
 ## Performance Metrics
 
@@ -26,7 +26,11 @@ Progress: [███░░░░░░░] 42% (v1.0 complete; v2.0 phase 3 done
 
 **v2.0 Summary:**
 - Phases: 4 (phases 3-6) | Plans: TBD | LOC: TBD
-- Total execution time: 0min so far
+- Total execution time: ~2min so far
+
+| Phase | Plan | Duration | Tasks | Files |
+|-------|------|----------|-------|-------|
+| 04    | 01   | 2min     | 2     | 2     |
 
 ## Accumulated Context
 
@@ -45,6 +49,12 @@ Phase 3 Plan 01 decisions (confirmed in production):
 - api/config.php permanently untracked via .gitignore — credentials never enter git history
 - test-supabase.php deleted immediately after verification — security exposure via public URL
 
+Phase 4 Plan 01 decisions:
+- `__DIR__ . '/../'` (one level up) for require_once in api/users/ — RESEARCH.md example had wrong depth; plan was correct
+- password_hash excluded from SELECT query in list.php at query level (not filtered post-fetch) — hash never crosses network
+- HTTP 201 returned on successful user creation (matching PostgREST INSERT convention)
+- Phone digits-only validation enforced server-side with preg_match('/^\d+$/', $phone)
+
 ### Pending Todos
 
 None.
@@ -57,5 +67,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Phase 03-01 complete — SUMMARY.md created, STATE.md updated, test file deleted and pushed
+Stopped at: Phase 04-01 complete — api/users/list.php and api/users/create.php created, SUMMARY.md written, STATE.md updated
 Resume file: None
