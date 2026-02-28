@@ -11,9 +11,9 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 Milestone: v2.0 User Management
 Phase: 5 of 6 (Admin Update, Delete, Block, Suspend) — IN PROGRESS
-Plan: Phase 05 Plan 01 complete (API endpoints: update.php + delete.php). Next: Plan 05-02 (admin UI actions)
-Status: update.php and delete.php created, syntax-verified, committed. Plan 05-01 done.
-Last activity: 2026-02-28 — Phase 05-01 complete; two PHP endpoints created and committed
+Plan: Phase 05 Plan 02 — Task 1 complete (admin.php + list.php modified). Awaiting human verify (Task 2 checkpoint).
+Status: admin.php has action buttons, edit modal, suspend modal, event delegation, escHtml(). list.php returns suspended_until. Pending: human verification at https://ch-ah.info/FirstApp/admin.php
+Last activity: 2026-02-28 — Phase 05-02 Task 1 committed (b847fd7); checkpoint reached for Task 2
 
 Progress: [██████░░░░] 70% (v1.0 complete; v2.0 phases 3-5 in progress, phase 6 pending)
 
@@ -33,6 +33,7 @@ Progress: [██████░░░░] 70% (v1.0 complete; v2.0 phases 3-5 i
 | 04    | 01   | 2min     | 2     | 2     |
 | 04    | 02   | ~15min   | 2     | 1     |
 | 05    | 01   | 2min     | 2     | 2     |
+| 05    | 02   | ~5min    | 1+cp  | 2     |
 
 ## Accumulated Context
 
@@ -69,6 +70,12 @@ Phase 5 Plan 01 decisions:
 - block action clears suspended_until to null — PHP null → JSON null → PostgreSQL NULL on TIMESTAMPTZ column
 - delete.php checks http_code 204 (not 200) — DELETE returns 204 No Content per PostgREST spec
 
+Phase 5 Plan 02 decisions:
+- Event delegation on #users-tbody registered once in DOMContentLoaded (not inside loadUsers()) — prevents listener accumulation on re-render
+- bootstrap.Modal.getOrCreateInstance() used exclusively — avoids duplicate Modal instance bug
+- escHtml() applied to all user data in both column cells and data-* attributes — full XSS coverage
+- suspended_until added to list.php SELECT — required for statusBadge() to display date without second API call
+
 ### Pending Todos
 
 None.
@@ -81,5 +88,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Phase 05 Plan 01 complete — api/users/update.php and api/users/delete.php created; next is Phase 05 Plan 02 (admin UI actions)
+Stopped at: Phase 05 Plan 02 Task 1 complete — admin.php + list.php modified (b847fd7). Checkpoint: awaiting human verify at https://ch-ah.info/FirstApp/admin.php (Task 2)
 Resume file: None
