@@ -107,10 +107,10 @@ Plans:
 4. A user with status "suspended" and a future `suspended_until` date is refused login; once that date passes, the same credentials succeed
 5. The hardcoded sharonb/1532 credentials no longer work — they are removed from the codebase
 
-**Plans:** TBD
+**Plans:** 1 plan
 
 Plans:
-- [ ] 06-01: Modify `api/login.php` and update `index.html` login form
+- [ ] 06-01-PLAN.md — Replace login.php with Supabase auth, update index.html email field, remove hardcoded credentials
 
 ---
 
@@ -123,4 +123,4 @@ Plans:
 | 3. Database Foundation | v2.0 | 1/1 | Complete | 2026-02-28 |
 | 4. Admin Read and Create | v2.0 | 2/2 | Complete | 2026-02-28 |
 | 5. Admin Update, Delete, Block, Suspend | v2.0 | 2/2 | Complete | 2026-02-28 |
-| 6. Login Replacement | v2.0 | 0/1 | Not started | - |
+| 6. Login Replacement | v2.0 | 0/1 | Planned | - |
