@@ -12,8 +12,8 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 Milestone: v2.0 User Management
 Phase: 3 of 6 (Database Foundation)
 Plan: 01 (in progress — paused at checkpoint)
-Status: Awaiting human action
-Last activity: 2026-02-28 — Phase 3 Plan 01 Task 1 complete; paused at Task 2 (human-action checkpoint)
+Status: Awaiting human verification
+Last activity: 2026-02-28 — Phase 3 Plan 01 Tasks 1-2 complete; paused at Task 3 (human-verify checkpoint)
 
 Progress: [██░░░░░░░░] 33% (v1.0 complete; v2.0 not started)
 
@@ -46,11 +46,11 @@ None.
 
 ### Blockers/Concerns
 
-- ACTIVE: Awaiting Sharon to (1) create `public.users` table in Supabase SQL Editor and (2) paste Project URL + service_role key into `api/config.php`
+- ACTIVE: Awaiting Sharon to (1) upload `api/config.php` to cPanel and (2) verify https://ch-ah.info/FirstApp/api/test-supabase.php returns {"data":[],"http_code":200,"error":null}
 - Verify cPanel PHP version before Phase 3 completes (must be 7.4+ for `password_hash` constant compatibility)
 
 ## Session Continuity
 
 Last session: 2026-02-28T16:38:38Z
-Stopped at: Phase 03-01 Task 2 — checkpoint:human-action (Supabase table creation + credentials)
+Stopped at: Phase 03-01 Task 3 — checkpoint:human-verify (live connection test at test-supabase.php)
 Resume file: None
