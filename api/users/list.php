@@ -7,7 +7,7 @@
  *          {"ok": false, "message": "שגיאה בטעינת המשתמשים"} on Supabase error
  *
  * Fields returned: id, first_name, last_name, id_number, email, phone, gender,
- *                  foreign_worker, status, created_at  (password_hash excluded at query level)
+ *                  foreign_worker, status, suspended_until, created_at  (password_hash excluded at query level)
  *
  * Path note: This file lives at api/users/list.php.
  *   __DIR__ = <project>/api/users
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 // order=created_at.desc: newest users first
 $result = supabase_request(
     'GET',
-    '/users?select=id,first_name,last_name,id_number,email,phone,gender,foreign_worker,status,created_at&order=created_at.desc'
+    '/users?select=id,first_name,last_name,id_number,email,phone,gender,foreign_worker,status,suspended_until,created_at&order=created_at.desc'
 );
 
 // On cURL transport error or unexpected HTTP response, return 500
