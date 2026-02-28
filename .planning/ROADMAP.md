@@ -84,11 +84,11 @@ Plans:
 3. Admin can click Block on a user and the user's status shows "blocked" in the table — permanently, with no expiry
 4. Admin can click Suspend, enter a future date, and the user's status shows "suspended" with the correct end date stored in Supabase
 
-**Plans:** TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 05-01: Build update and delete API endpoints (`api/users/update.php`, `api/users/delete.php`)
-- [ ] 05-02: Add edit modal, delete confirmation, block button, and suspend-with-date-picker to `admin.php`
+- [ ] 05-01-PLAN.md — Build update and delete API endpoints (`api/users/update.php`, `api/users/delete.php`)
+- [ ] 05-02-PLAN.md — Add edit modal, delete confirmation, block button, and suspend-with-date-picker to `admin.php`
 
 ---
 
