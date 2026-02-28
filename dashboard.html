@@ -139,7 +139,9 @@
         // ----------------------------------------------------------------
         document.getElementById('logout-link').addEventListener('click', function (e) {
             e.preventDefault();
-            window.location.href = 'index.html';
+            fetch('api/logout.php').then(function () {
+                window.location.href = 'index.html';
+            });
         });
     </script>
 </body>
