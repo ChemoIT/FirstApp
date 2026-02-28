@@ -62,11 +62,11 @@ Plans:
 5. Admin can click the password generator button and a random secure password is inserted into the password field
 6. Admin can type in the search box and the user table filters live by name, email, or ID without a page reload
 
-**Plans:** TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 04-01: Build list and create API endpoints (`api/users/list.php`, `api/users/create.php`)
-- [ ] 04-02: Build `admin.php` UI with user table, search, and create form
+- [ ] 04-01-PLAN.md — Build list and create API endpoints (`api/users/list.php`, `api/users/create.php`)
+- [ ] 04-02-PLAN.md — Build `admin.php` UI with user table, search, and create form
 
 ---
 
@@ -121,6 +121,6 @@ Plans:
 | 1. Foundation, Auth, and Dispatch | v1.0 | 3/3 | Complete | 2026-02-28 |
 | 2. Signature Capture and Confirmation | v1.0 | 2/2 | Complete | 2026-02-28 |
 | 3. Database Foundation | v2.0 | 1/1 | Complete | 2026-02-28 |
-| 4. Admin Read and Create | v2.0 | 0/2 | Not started | - |
+| 4. Admin Read and Create | v2.0 | 0/2 | Planned | - |
 | 5. Admin Update, Delete, Block, Suspend | v2.0 | 0/2 | Not started | - |
 | 6. Login Replacement | v2.0 | 0/1 | Not started | - |
