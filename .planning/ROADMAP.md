@@ -3,7 +3,7 @@
 ## Milestones
 
 - SHIPPED **v1.0 Signature Dispatch** — Phases 1-2 (shipped 2026-02-28)
-- IN PROGRESS **v2.0 User Management** — Phases 3-6
+- SHIPPED **v2.0 User Management** — Phases 3-6 (shipped 2026-02-28)
 
 ## Phases
 
@@ -15,14 +15,14 @@
 
 </details>
 
-### v2.0 User Management (In Progress)
+### v2.0 User Management (SHIPPED 2026-02-28)
 
 **Milestone Goal:** Replace hardcoded credentials with a Supabase-backed user database. Admin can create, view, edit, delete, block, and suspend users. Login validates against the database.
 
 - [x] **Phase 3: Database Foundation** — Schema and PHP connection layer in place before any other code — completed 2026-02-28
 - [x] **Phase 4: Admin Read and Create** — Admin can view the user list and add new users end to end — completed 2026-02-28
 - [x] **Phase 5: Admin Update, Delete, Block, Suspend** — Admin can mutate and remove users with full status control — completed 2026-02-28
-- [ ] **Phase 6: Login Replacement** — Email+password login from Supabase replaces hardcoded credentials
+- [x] **Phase 6: Login Replacement** — Email+password login from Supabase replaces hardcoded credentials — completed 2026-02-28
 
 ---
 
@@ -110,7 +110,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 06-01-PLAN.md — Replace login.php with Supabase auth, update index.html email field, remove hardcoded credentials
+- [x] 06-01-PLAN.md — Replace login.php with Supabase auth, update index.html email field, remove hardcoded credentials — completed 2026-02-28
 
 ---
 
@@ -123,4 +123,4 @@ Plans:
 | 3. Database Foundation | v2.0 | 1/1 | Complete | 2026-02-28 |
 | 4. Admin Read and Create | v2.0 | 2/2 | Complete | 2026-02-28 |
 | 5. Admin Update, Delete, Block, Suspend | v2.0 | 2/2 | Complete | 2026-02-28 |
-| 6. Login Replacement | v2.0 | 0/1 | Planned | - |
+| 6. Login Replacement | v2.0 | 1/1 | Complete | 2026-02-28 |

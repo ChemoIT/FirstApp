@@ -136,3 +136,10 @@ None — no external service configuration required. Supabase credentials were a
 ---
 *Phase: 06-login-replacement*
 *Completed: 2026-02-28*
+
+## Self-Check: PASSED
+
+- FOUND: .planning/phases/06-login-replacement/06-01-SUMMARY.md
+- FOUND: b3a4cfa (feat: replace hardcoded login)
+- FOUND: 3d8c171 (fix: add logout endpoint)
+- FOUND: 10fba67 (docs: plan complete commit)
